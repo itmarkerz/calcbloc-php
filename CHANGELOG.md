@@ -2,7 +2,7 @@
 
 All notable changes to `calcbloc/calcbloc` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
-Changes to the tax figures themselves are listed in the [CalcBloc data changelog](https://calcbloc.com/data/changelog).
+Changes to the tax figures themselves are listed in the [CalcBloc data changelog](https://calcbloc.com/data/changelog?utm_source=calcbloc-php&utm_medium=docs&utm_campaign=itmarkerz-oss).
 
 ## [Unreleased]
 

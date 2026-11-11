@@ -36,10 +36,17 @@ if ($countriesFile !== null) {
     }
 }
 
+// Referral tag for the README's links to calcbloc.com (the bundled pageUrl values stay plain).
+$readmeLink = static function (string $url): string {
+    $parts = explode('#', $url, 2);
+    $tagged = $parts[0] . (str_contains($parts[0], '?') ? '&' : '?') . 'utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss';
+    return isset($parts[1]) ? $tagged . '#' . $parts[1] : $tagged;
+};
+
 $rows = [];
 foreach ($manifest['countries'] as $c) {
     $live = $api === null || isset($api[$c['country']]);
-    $name = $live ? sprintf('[%s](%s)', $c['name'], $c['pageUrl']) : $c['name'];
+    $name = $live ? sprintf('[%s](%s)', $c['name'], $readmeLink($c['pageUrl'])) : $c['name'];
     $regions = count($c['regions']);
     $regionText = $regions === 0 ? '-' : (string) $regions;
     $row = [$name, '`' . $c['country'] . '`', $c['currency'], implode(', ', $c['years']), $regionText, $c['lastVerified']];

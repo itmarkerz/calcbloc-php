@@ -20,7 +20,7 @@
         "tax api",
         "calcbloc"
     ],
-    "homepage": "https://calcbloc.com/developers",
+    "homepage": "https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=package&utm_campaign=itmarkerz-oss",
     "license": "MIT",
     "authors": [
         {
@@ -31,7 +31,7 @@
     "support": {
         "issues": "https://github.com/itmarkerz/calcbloc-php/issues",
         "source": "https://github.com/itmarkerz/calcbloc-php",
-        "docs": "https://calcbloc.com/developers"
+        "docs": "https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=package&utm_campaign=itmarkerz-oss"
     },
     "require": {
         "php": ">=8.1"
