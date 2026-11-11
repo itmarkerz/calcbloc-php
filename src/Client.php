@@ -13,30 +13,39 @@ use CalcBloc\Internal\Json;
 /**
  * Client for the CalcBloc API (https://calcbloc.com/developers).
  *
- * Open endpoints (countries(), taxTables()) work without a key. The calculation endpoints (netSalary(),
- * employerCost(), compare()) need a free API key, sent in the X-API-Key header. Every request counts towards the
- * limits of your key (or, without a key, of your IP address); see https://calcbloc.com/developers#limits.
+ * Every endpoint works without a key for 50 requests a day (5 a minute) per IP address. A free API key, sent in
+ * the X-API-Key header, raises that to 5,000 a day (60 a minute). The key comes from the constructor or, when none
+ * is passed, from the CALCBLOC_API_KEY environment variable. When the free allowance without a key is used up,
+ * RateLimitException says so and links to the keys page; see https://calcbloc.com/developers#limits.
  *
- *     $client = new CalcBloc\Client(getenv('CALCBLOC_API_KEY') ?: null);
+ *     $client = new CalcBloc\Client();                    // no key, or CALCBLOC_API_KEY from the environment
+ *     $client = new CalcBloc\Client(apiKey: 'cb_...');    // a free key: 5,000 requests a day
  *     $table = $client->taxTables('canada', 'latest', region: 'on');
  */
 final class Client
 {
     public const VERSION = '0.1.0';
     public const DEFAULT_BASE_URL = 'https://calcbloc.com';
+    /** Environment variable read for the API key when the constructor gets none. */
+    public const API_KEY_ENV = 'CALCBLOC_API_KEY';
+    /** Where to get a free API key; linked from the RateLimitException raised when the free allowance is used up. */
+    public const KEYS_URL = 'https://calcbloc.com/developers/keys?utm_source=calcbloc-php&utm_medium=app&utm_campaign=itmarkerz-oss';
 
+    private readonly ?string $apiKey;
     private readonly string $baseUrl;
     private readonly Transport $transport;
     private ?RateLimit $lastRateLimit = null;
 
     /**
-     * @param string|null $apiKey Your API key (free at https://calcbloc.com/developers). Null for keyless access.
+     * @param string|null $apiKey Your API key (free at https://calcbloc.com/developers/keys). Null reads the
+     *                            CALCBLOC_API_KEY environment variable; '' (or neither set) calls without a key,
+     *                            which allows 50 requests a day.
      * @param string $baseUrl API origin; the client calls {baseUrl}/api/v1/...
      * @param float $timeout Seconds before a request is abandoned.
      * @param Transport|null $transport HTTP transport; default: ext-curl when loaded, else PHP streams.
      */
     public function __construct(
-        private readonly ?string $apiKey = null,
+        ?string $apiKey = null,
         string $baseUrl = self::DEFAULT_BASE_URL,
         private readonly float $timeout = 15.0,
         ?Transport $transport = null,
@@ -47,6 +56,8 @@ final class Client
         if ($timeout <= 0) {
             throw new \InvalidArgumentException('Timeout must be greater than zero.');
         }
+        $key = $apiKey ?? self::envApiKey();
+        $this->apiKey = $key !== null && trim($key) !== '' ? trim($key) : null;
         $this->baseUrl = rtrim($baseUrl, '/');
         $this->transport = $transport ?? (extension_loaded('curl') ? new CurlTransport() : new StreamTransport());
     }
@@ -172,7 +183,7 @@ final class Client
             'Accept' => $accept,
             'User-Agent' => 'calcbloc-php/' . self::VERSION . ' (+https://calcbloc.com/developers)',
         ];
-        if ($this->apiKey !== null && $this->apiKey !== '') {
+        if ($this->apiKey !== null) {
             $headers['X-API-Key'] = $this->apiKey;
         }
 
@@ -202,10 +213,42 @@ final class Client
         }
         if ($response->status === 429 || $code === 'rate_limited') {
             $retry = $response->header('retry-after');
+            $retryAfter = $retry !== null && is_numeric($retry) ? (int) $retry : null;
+            if ($this->apiKey === null) {
+                $message = self::noKeyLimitMessage($message, $retryAfter);
+            }
 
-            return new RateLimitException($message, $docs, $retry !== null && is_numeric($retry) ? (int) $retry : null, $rateLimit, $response->headers);
+            return new RateLimitException($message, $docs, $retryAfter, $rateLimit, $response->headers);
         }
 
         return new CalcBlocException($message, $code, $response->status, $docs, null, $response->headers);
+    }
+
+    /** True when an API key is configured (passed in, or from CALCBLOC_API_KEY). */
+    public function hasApiKey(): bool
+    {
+        return $this->apiKey !== null;
+    }
+
+    private static function envApiKey(): ?string
+    {
+        $value = getenv(self::API_KEY_ENV);
+        if (!is_string($value) || $value === '') {
+            $value = $_ENV[self::API_KEY_ENV] ?? $_SERVER[self::API_KEY_ENV] ?? null;
+        }
+
+        return is_string($value) && trim($value) !== '' ? $value : null;
+    }
+
+    /** The 429 message without a key: the free allowance is used up; add a free key and how to set it. */
+    private static function noKeyLimitMessage(string $apiMessage, ?int $retryAfter): string
+    {
+        $perMinute = stripos($apiMessage, 'minute') !== false && ($retryAfter === null || $retryAfter <= 60);
+        $usedUp = $perMinute
+            ? 'The free allowance without a key (5 requests a minute, 50 a day) is used up for this minute.'
+            : 'The free allowance of 50 requests a day without a key is used up.';
+
+        return $usedUp . ' Add your free API key (5,000 requests a day): ' . self::KEYS_URL
+            . ' (set it with new Client(apiKey: \'...\') or the ' . self::API_KEY_ENV . ' environment variable).';
     }
 }

@@ -157,7 +157,7 @@ Errors use the API's error codes: `Tables::load('atlantis')` throws a `CalcBlocE
 ```php
 use CalcBloc\Client;
 
-$client = new Client(getenv('CALCBLOC_API_KEY') ?: null); // baseUrl and timeout (seconds) are optional
+$client = new Client(); // no key (50 requests a day), or CALCBLOC_API_KEY; new Client(apiKey: 'cb_...') to pass one
 
 $countries = $client->countries();                              // list<ApiCountry>: years, regions, endpoints and their parameters
 $table     = $client->taxTables('canada', 'latest', 'on');      // TaxTable (same object as Tables::load())
@@ -171,14 +171,19 @@ $both = $client->compare('uk', 'ireland', 60000, ['currency' => 'GBP']); // Comp
 
 Each country's parameters for `net-salary` and `employer-cost` (for example `filing_status` in the US or `tax_class` in Germany) are listed by `countries()` and in the [OpenAPI description](https://calcbloc.com/api/openapi.json). Countries marked `tablesOnly` have tax tables but no calculation engine yet. The calculation endpoints answer them with HTTP 400 `unsupported_country`.
 
-### API key and limits
+### Free use and API keys
 
-Countries and tax tables work without a key. Net salary, employer cost and compare need a **free API key** from [calcbloc.com/developers](https://calcbloc.com/developers/keys?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss). The client sends it in the `X-API-Key` header. Keys in the URL are refused.
+- **Offline tables need no key and no network**: `Tables` reads the JSON bundled in the package.
+- **API calls work without a key** for 50 requests a day and 5 a minute per IP address, on every endpoint.
+- **Add a free API key for 5,000 requests a day** (60 a minute). Get one instantly at [calcbloc.com/developers/keys](https://calcbloc.com/developers/keys?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) (enter your email address; the key is shown once).
+- **Set it** with `new Client(apiKey: 'cb_...')`, or in the `CALCBLOC_API_KEY` environment variable, which `new Client()` reads when no key is passed (pass `''` to call without a key even when the variable is set). The client sends it in the `X-API-Key` header. Keys in the URL are refused.
 
 | Access | Per day | Per minute |
 | --- | --- | --- |
 | No key (per IP address) | 50 | 5 |
 | Free key | 5,000 | 60 |
+
+When the free allowance without a key is used up, the client throws a `RateLimitException` whose message says so, links to the keys page and shows how to set the key. With a key, the message gives that key's limit.
 
 Days reset at midnight UTC. `$client->lastRateLimit()` returns the `X-RateLimit-*` values of the last response. Current limits and commercial terms are on the [developer page](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss#limits). Responses can be cached for a day, so cache on your side, or use the offline tables when the bundled year is the one you need.
 
@@ -193,7 +198,7 @@ use CalcBloc\RateLimitException;
 try {
     $client->netSalary('norway', 700000);
 } catch (RateLimitException $e) {
-    sleep($e->getRetryAfter() ?? 60);           // HTTP 429 rate_limited
+    sleep($e->getRetryAfter() ?? 60);           // HTTP 429 rate_limited; without a key the message asks for a free key
 } catch (CalcBlocException $e) {
     $e->getErrorCode();  // "unsupported_country" (Norway has tax tables only), "invalid_key", "invalid_parameter", ...
     $e->getStatus();     // 400 (also getCode())
@@ -218,10 +223,10 @@ $client = new Client($apiKey, transport: new Psr18Transport($psr18Client, $psr17
 
 | | Bundled tables (`Tables`) | API (`Client`) |
 | --- | --- | --- |
-| Network, key | None | HTTPS; free key for calculations |
+| Network, key | None | HTTPS; 50 requests a day without a key, 5,000 with a free key |
 | Content | Tax tables as of this release | Always the current published tables |
 | Calculations | `taxFromBands()` on one set of brackets | Full net salary, employer cost and comparison engines |
-| Limits | None | See [limits](#api-key-and-limits) |
+| Limits | None | See [free use and API keys](#free-use-and-api-keys) |
 
 Tax figures change: budgets, mid-year changes and corrections. The tables are dated (`lastVerified`, and `retrieved_at` on every row). Update the package regularly, or call the API when you need the latest figures.
 

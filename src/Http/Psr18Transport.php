@@ -15,7 +15,7 @@ use Psr\Http\Message\RequestFactoryInterface;
  * The PSR interfaces are not a dependency of this package: install your client as usual and pass it here with a
  * PSR-17 request factory. The timeout is the client's own setting; configure it on the client.
  *
- *     $client = new CalcBloc\Client(getenv('CALCBLOC_API_KEY'), transport: new Psr18Transport($psr18Client, $psr17Factory));
+ *     $client = new CalcBloc\Client(transport: new Psr18Transport($psr18Client, $psr17Factory)); // key from CALCBLOC_API_KEY
  */
 final class Psr18Transport implements Transport
 {

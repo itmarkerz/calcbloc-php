@@ -6,6 +6,13 @@ Changes to the tax figures themselves are listed in the [CalcBloc data changelog
 
 ## [Unreleased]
 
+### Changed
+
+- `Client` reads the API key from the `CALCBLOC_API_KEY` environment variable when none is passed (`''` still means
+  no key) and has `hasApiKey()`. Without a key every endpoint works for 50 requests a day; a `RateLimitException`
+  without a key now says the free allowance is used up, links to a free API key (5,000 requests a day,
+  `Client::KEYS_URL`) and shows how to set it.
+
 ## [0.1.0] - 2026-11-11
 
 First release (not yet published on Packagist).

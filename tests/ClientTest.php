@@ -30,6 +30,23 @@ final class ClientTest extends TestCase
 
     private const ATTRIBUTION = ['source' => 'CalcBloc', 'url' => 'https://calcbloc.com/developers', 'required' => true, 'text' => 'Data by CalcBloc (calcbloc.com)'];
 
+    private const KEYS_URL = 'https://calcbloc.com/developers/keys?utm_source=calcbloc-php&utm_medium=app&utm_campaign=itmarkerz-oss';
+
+    /** @var string|false */
+    private $envBefore = false;
+
+    protected function setUp(): void
+    {
+        $this->envBefore = getenv('CALCBLOC_API_KEY');
+        putenv('CALCBLOC_API_KEY');
+        unset($_ENV['CALCBLOC_API_KEY'], $_SERVER['CALCBLOC_API_KEY']);
+    }
+
+    protected function tearDown(): void
+    {
+        putenv($this->envBefore === false ? 'CALCBLOC_API_KEY' : 'CALCBLOC_API_KEY=' . $this->envBefore);
+    }
+
     private function client(FakeTransport $transport, ?string $key = 'test-key'): Client
     {
         return new Client($key, 'https://calcbloc.com', 7.5, $transport);
@@ -181,7 +198,58 @@ final class ClientTest extends TestCase
             self::assertNotNull($e->getRateLimit());
             self::assertSame(0, $e->getRateLimit()->remaining);
             self::assertSame('https://calcbloc.com/developers#limits', $e->getDocs());
+            // With a key the API's message for the key's limit is kept, without the key prompt.
+            self::assertSame('Too many requests this minute (limit 60).', $e->getMessage());
+            self::assertStringNotContainsString('developers/keys', $e->getMessage());
         }
+    }
+
+    public function testRateLimitWithoutKeyAsksForAFreeKey(): void
+    {
+        $transport = (new FakeTransport())->queue(429, ['error' => [
+            'code' => 'rate_limited', 'message' => 'Daily limit of 50 requests reached.', 'docs' => 'https://calcbloc.com/developers#limits',
+        ]], ['Retry-After' => '36000', 'X-RateLimit-Limit' => '50', 'X-RateLimit-Remaining' => '0', 'X-RateLimit-Reset' => '36000']);
+        try {
+            $this->client($transport, null)->netSalary('uk', 30000);
+            self::fail('expected an exception');
+        } catch (RateLimitException $e) {
+            self::assertArrayNotHasKey('X-API-Key', $transport->last()['headers']);
+            self::assertStringStartsWith('The free allowance of 50 requests a day without a key is used up. Add your free API key (5,000 requests a day): ', $e->getMessage());
+            self::assertStringContainsString(self::KEYS_URL, $e->getMessage());
+            self::assertSame(self::KEYS_URL, Client::KEYS_URL);
+            self::assertStringContainsString("new Client(apiKey: '...')", $e->getMessage());
+            self::assertStringContainsString('CALCBLOC_API_KEY', $e->getMessage());
+            self::assertSame(36000, $e->getRetryAfter());
+            self::assertSame(0, $e->getRateLimit()?->remaining);
+        }
+    }
+
+    public function testRateLimitWithoutKeyPerMinute(): void
+    {
+        $transport = (new FakeTransport())->queue(429, ['error' => ['code' => 'rate_limited', 'message' => 'Too many requests this minute (limit 5).']], ['Retry-After' => '20']);
+        try {
+            $this->client($transport, '')->countries();
+            self::fail('expected an exception');
+        } catch (RateLimitException $e) {
+            self::assertStringStartsWith('The free allowance without a key (5 requests a minute, 50 a day) is used up for this minute.', $e->getMessage());
+            self::assertStringContainsString(self::KEYS_URL, $e->getMessage());
+        }
+    }
+
+    public function testApiKeyFromEnvironment(): void
+    {
+        putenv('CALCBLOC_API_KEY= env-key ');
+        $transport = (new FakeTransport())->queue(200, ['countries' => []])->queue(200, ['countries' => []]);
+        $client = new Client(transport: $transport);
+        self::assertTrue($client->hasApiKey());
+        $client->countries();
+        self::assertSame('env-key', $transport->last()['headers']['X-API-Key']);
+
+        // An explicit '' means no key, even when the variable is set.
+        $keyless = new Client('', transport: $transport);
+        self::assertFalse($keyless->hasApiKey());
+        $keyless->countries();
+        self::assertArrayNotHasKey('X-API-Key', $transport->last()['headers']);
     }
 
     public function testNonJsonErrorBody(): void
