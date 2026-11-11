@@ -1,0 +1,7 @@
+parameters:
+    level: 8
+    # Public methods validate their arguments at run time as well, so PHPDoc types are not treated as certain.
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - src
+        - tests

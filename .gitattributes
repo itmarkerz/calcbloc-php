@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+# Not shipped in the Composer package (composer install --prefer-dist).
+/.github            export-ignore
+/bin                export-ignore
+/examples           export-ignore
+/tests              export-ignore
+/.editorconfig      export-ignore
+/.gitattributes     export-ignore
+/.gitignore         export-ignore
+/phpstan.neon.dist  export-ignore
+/phpunit.xml.dist   export-ignore
