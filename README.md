@@ -298,6 +298,7 @@ The script reads the country list from `manifest.json`, checks every row for a s
 
 ## Licences and attribution
 
+- **Copyright:** © 2026 itmarkerz technologies (code and data). CalcBloc is a product of itmarkerz technologies.
 - **Code:** [MIT](LICENSE).
 - **Data** (`data/`): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (full text in [`data/LICENSE`](data/LICENSE)). When you show or publish figures from it, credit **"Data by CalcBloc (calcbloc.com/data)"** with a link to [calcbloc.com/data](https://calcbloc.com/data?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss).
 - **API:** free use requires a visible "Data by CalcBloc" link wherever the figures are shown. Every response includes an `attribution` block with the wording and the page to link to. See the [API terms](https://calcbloc.com/developers/terms?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss).
