@@ -238,8 +238,8 @@ Generated from `data/manifest.json` by `composer coverage-table`. "Regions" coun
 | [Finland](https://calcbloc.com/finland/tax-tables/2026) | `finland` | EUR | 2026 | 19 | 2026-11-11 | tax tables |
 | [France](https://calcbloc.com/france/tax-tables/2026) | `france` | EUR | 2026 | - | 2026-11-09 | tax tables, net-salary, compare |
 | [Germany](https://calcbloc.com/germany/tax-tables/2026) | `germany` | EUR | 2026 | - | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
-| Greece | `greece` | EUR | 2026 | - | 2026-11-11 | bundled only (not yet on the API) |
-| Hungary | `hungary` | HUF | 2026 | - | 2026-11-11 | bundled only (not yet on the API) |
+| [Greece](https://calcbloc.com/greece/tax-tables/2026) | `greece` | EUR | 2026 | - | 2026-11-11 | tax tables |
+| [Hungary](https://calcbloc.com/hungary/tax-tables/2026) | `hungary` | HUF | 2026 | - | 2026-11-11 | tax tables |
 | [India](https://calcbloc.com/india/tax-tables/2026-27) | `india` | INR | 2026-27 | - | 2026-11-11 | tax tables, net-salary, employer-cost, compare |
 | [Ireland](https://calcbloc.com/ireland/tax-tables/2026) | `ireland` | EUR | 2026 | - | 2026-11-06 | tax tables, net-salary, employer-cost, compare |
 | [Italy](https://calcbloc.com/italy/tax-tables/2026) | `italy` | EUR | 2026 | 21 | 2026-11-09 | tax tables |
@@ -249,10 +249,10 @@ Generated from `data/manifest.json` by `composer coverage-table`. "Regions" coun
 | [Norway](https://calcbloc.com/norway/tax-tables/2026) | `norway` | NOK | 2026 | - | 2026-11-11 | tax tables |
 | [Poland](https://calcbloc.com/poland/tax-tables/2026) | `poland` | PLN | 2026 | - | 2026-11-10 | tax tables |
 | [Portugal](https://calcbloc.com/portugal/tax-tables/2026) | `portugal` | EUR | 2026 | 2 | 2026-11-09 | tax tables |
-| Romania | `romania` | RON | 2026 | - | 2026-11-11 | bundled only (not yet on the API) |
+| [Romania](https://calcbloc.com/romania/tax-tables/2026) | `romania` | RON | 2026 | - | 2026-11-11 | tax tables |
 | [Singapore](https://calcbloc.com/singapore/tax-tables/2026) | `singapore` | SGD | 2026 | - | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
-| Slovakia | `slovakia` | EUR | 2026 | - | 2026-11-11 | bundled only (not yet on the API) |
-| Slovenia | `slovenia` | EUR | 2026 | - | 2026-11-11 | bundled only (not yet on the API) |
+| [Slovakia](https://calcbloc.com/slovakia/tax-tables/2026) | `slovakia` | EUR | 2026 | - | 2026-11-11 | tax tables |
+| [Slovenia](https://calcbloc.com/slovenia/tax-tables/2026) | `slovenia` | EUR | 2026 | - | 2026-11-11 | tax tables |
 | [Spain](https://calcbloc.com/spain/tax-tables/2026) | `spain` | EUR | 2026 | 21 | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
 | [Sweden](https://calcbloc.com/sweden/tax-tables/2026) | `sweden` | SEK | 2026 | 21 | 2026-11-10 | tax tables |
 | [Switzerland](https://calcbloc.com/switzerland/tax-tables/2026) | `switzerland` | CHF | 2026 | 26 | 2026-11-09 | tax tables |
