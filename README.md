@@ -15,6 +15,8 @@
 
 PHP 8.1 or later, no required dependencies.
 
+CalcBloc is a product of [itmarkerz technologies](https://itmarkerz.co.in).
+
 ## Installation
 
 ```bash
@@ -308,3 +310,7 @@ The tables are reference data compiled from official sources. They are not tax, 
 - Data downloads and changelog: [calcbloc.com/data](https://calcbloc.com/data)
 - OpenAPI 3.1 description: [calcbloc.com/api/openapi.json](https://calcbloc.com/api/openapi.json)
 - Other packages: [calcbloc-python](https://github.com/itmarkerz/calcbloc-python), [calcbloc-js](https://github.com/itmarkerz/calcbloc-js), [calcbloc-data](https://github.com/itmarkerz/calcbloc-data)
+
+## About
+
+[CalcBloc](https://calcbloc.com) is built and maintained by [itmarkerz technologies](https://itmarkerz.co.in), a web and mobile app development company in Kerala, India. The open data behind this package is at [calcbloc.com/data](https://calcbloc.com/data) and the API documentation at [calcbloc.com/developers](https://calcbloc.com/developers). The other CalcBloc packages (Python, JavaScript, R, Google Sheets, the MCP server and the dataset itself) are in the [itmarkerz GitHub organization](https://github.com/itmarkerz).
