@@ -110,7 +110,7 @@ final class Client
     }
 
     /**
-     * GET /api/v1/net-salary: take-home pay for an annual salary (needs an API key).
+     * GET /api/v1/net-salary: take-home pay for an annual salary (no key needed for 50 a day).
      *
      * @param string $country Country code with a calculation engine (see ApiCountry::$tablesOnly).
      * @param int|float $salary Annual gross salary in the country's currency (India: annual CTC).
@@ -123,7 +123,7 @@ final class Client
     }
 
     /**
-     * GET /api/v1/employer-cost: total cost of employing someone at an annual salary (needs an API key).
+     * GET /api/v1/employer-cost: total cost of employing someone at an annual salary (no key needed for 50 a day).
      *
      * @param array<string, scalar|null> $params Other query parameters, as for netSalary().
      */
@@ -133,7 +133,7 @@ final class Client
     }
 
     /**
-     * GET /api/v1/compare: the same salary in two countries (needs an API key).
+     * GET /api/v1/compare: the same salary in two countries (no key needed for 50 a day).
      *
      * @param array<string, scalar|null> $params `currency` (a's or b's), `us_state`, `uk_region`, `ca_province`, `in_state`.
      */
