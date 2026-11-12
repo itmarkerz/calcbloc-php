@@ -12,6 +12,9 @@ Changes to the tax figures themselves are listed in the [CalcBloc data changelog
   no key) and has `hasApiKey()`. Without a key every endpoint works for 50 requests a day; a `RateLimitException`
   without a key now says the free allowance is used up, links to a free API key (5,000 requests a day,
   `Client::KEYS_URL`) and shows how to set it.
+- Bundled data refreshed to the CalcBloc data manifest of 2026-11-12: 37 countries and 242 tables. New: Latvia,
+  Croatia (with 21 regional tables), Estonia, Bulgaria, Lithuania, Malta, Cyprus and Iceland. Lithuania, Malta, Cyprus
+  and Iceland are bundled ahead of their pages on calcbloc.com.
 
 ## [0.1.0] - 2026-11-11
 
