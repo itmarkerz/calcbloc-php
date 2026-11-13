@@ -237,10 +237,10 @@ Generated from `data/manifest.json` by `composer coverage-table`. "Regions" coun
 <!-- coverage:start -->
 | Country | Code | Currency | Tax years | Regions | Last checked | API endpoints |
 | --- | --- | --- | --- | --- | --- | --- |
-| [Australia](https://calcbloc.com/australia/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `australia` | AUD | 2026-27 | - | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
+| [Australia](https://calcbloc.com/australia/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `australia` | AUD | 2026-27 | - | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
 | [Austria](https://calcbloc.com/austria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `austria` | EUR | 2026 | - | 2026-11-10 | tax tables |
 | [Bulgaria](https://calcbloc.com/bulgaria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bulgaria` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Canada](https://calcbloc.com/canada/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `canada` | CAD | 2026 | 13 | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
+| [Canada](https://calcbloc.com/canada/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `canada` | CAD | 2026 | 13 | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
 | [Croatia](https://calcbloc.com/croatia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `croatia` | EUR | 2026 | 21 | 2026-11-11 | tax tables |
 | [Cyprus](https://calcbloc.com/cyprus/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cyprus` | EUR | 2026 | - | 2026-11-11 | tax tables |
 | [Czechia](https://calcbloc.com/czechia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `czechia` | CZK | 2026 | - | 2026-11-11 | tax tables |
@@ -253,7 +253,7 @@ Generated from `data/manifest.json` by `composer coverage-table`. "Regions" coun
 | [Hungary](https://calcbloc.com/hungary/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `hungary` | HUF | 2026 | - | 2026-11-11 | tax tables |
 | [Iceland](https://calcbloc.com/iceland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `iceland` | ISK | 2026 | - | 2026-11-11 | tax tables |
 | [India](https://calcbloc.com/india/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `india` | INR | 2026-27 | - | 2026-11-11 | tax tables, net-salary, employer-cost, compare |
-| [Ireland](https://calcbloc.com/ireland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ireland` | EUR | 2026 | - | 2026-11-06 | tax tables, net-salary, employer-cost, compare |
+| [Ireland](https://calcbloc.com/ireland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ireland` | EUR | 2026 | - | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
 | [Italy](https://calcbloc.com/italy/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `italy` | EUR | 2026 | 21 | 2026-11-09 | tax tables |
 | [Latvia](https://calcbloc.com/latvia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `latvia` | EUR | 2026 | - | 2026-11-11 | tax tables |
 | [Liechtenstein](https://calcbloc.com/liechtenstein/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `liechtenstein` | CHF | 2026 | - | 2026-11-13 | tax tables |
@@ -261,7 +261,7 @@ Generated from `data/manifest.json` by `composer coverage-table`. "Regions" coun
 | [Luxembourg](https://calcbloc.com/luxembourg/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `luxembourg` | EUR | 2026 | - | 2026-11-11 | tax tables |
 | [Malta](https://calcbloc.com/malta/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `malta` | EUR | 2026 | - | 2026-11-11 | tax tables |
 | [Netherlands](https://calcbloc.com/netherlands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `netherlands` | EUR | 2026 | - | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
-| [New Zealand](https://calcbloc.com/new-zealand/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `new-zealand` | NZD | 2026-27 | - | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
+| [New Zealand](https://calcbloc.com/new-zealand/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `new-zealand` | NZD | 2026-27 | - | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
 | [Norway](https://calcbloc.com/norway/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `norway` | NOK | 2026 | - | 2026-11-11 | tax tables |
 | [Poland](https://calcbloc.com/poland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `poland` | PLN | 2026 | - | 2026-11-10 | tax tables |
 | [Portugal](https://calcbloc.com/portugal/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `portugal` | EUR | 2026 | 2 | 2026-11-09 | tax tables |
@@ -276,8 +276,8 @@ Generated from `data/manifest.json` by `composer coverage-table`. "Regions" coun
 | [Türkiye](https://calcbloc.com/turkey/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `turkey` | TRY | 2026 | - | 2026-11-13 | tax tables |
 | [Ukraine](https://calcbloc.com/ukraine/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ukraine` | UAH | 2026 | - | 2026-11-12 | tax tables |
 | [United Arab Emirates](https://calcbloc.com/uae/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uae` | AED | 2026 | - | 2026-11-09 | tax tables |
-| [United Kingdom](https://calcbloc.com/uk/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uk` | GBP | 2026-27, 2025-26 | 2 | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
-| [United States](https://calcbloc.com/us/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `us` | USD | 2026 | 51 | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
+| [United Kingdom](https://calcbloc.com/uk/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uk` | GBP | 2026-27, 2025-26 | 2 | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
+| [United States](https://calcbloc.com/us/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `us` | USD | 2026 | 51 | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
 <!-- coverage:end -->
 
 Countries marked "bundled only" are included in the data ahead of their pages on calcbloc.com. `Client::countries()` lists what the API serves today.
