@@ -62,7 +62,7 @@ foreach ($manifest['countries'] as $c) {
 }
 usort($rows, static fn (array $a, array $b): int => strcmp(strip_tags(preg_replace('~\[([^\]]+)\].*~', '$1', $a[0]) ?? ''), strip_tags(preg_replace('~\[([^\]]+)\].*~', '$1', $b[0]) ?? '')));
 
-$header = ['Country', 'Code', 'Currency', 'Tax years', 'Regions', 'Last verified'];
+$header = ['Country', 'Code', 'Currency', 'Tax years', 'Regions', 'Last checked'];
 if ($api !== null) {
     $header[] = 'API endpoints';
 }

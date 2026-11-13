@@ -235,7 +235,7 @@ Tax figures change: budgets, mid-year changes and corrections. The tables are da
 Generated from `data/manifest.json` by `composer coverage-table`. "Regions" counts the regional tables bundled (US states and DC, Canadian provinces and territories, UK nations, Spanish autonomous communities, Swiss cantons and so on).
 
 <!-- coverage:start -->
-| Country | Code | Currency | Tax years | Regions | Last verified | API endpoints |
+| Country | Code | Currency | Tax years | Regions | Last checked | API endpoints |
 | --- | --- | --- | --- | --- | --- | --- |
 | [Australia](https://calcbloc.com/australia/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `australia` | AUD | 2026-27 | - | 2026-11-09 | tax tables, net-salary, employer-cost, compare |
 | [Austria](https://calcbloc.com/austria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `austria` | EUR | 2026 | - | 2026-11-10 | tax tables |
@@ -314,6 +314,7 @@ The script reads the country list from `manifest.json`, checks every row for a s
 - **Copyright:** © 2026 itmarkerz technologies (code and data). CalcBloc is a product of itmarkerz technologies.
 - **Code:** [MIT](LICENSE).
 - **Data** (`data/`): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (full text in [`data/LICENSE`](data/LICENSE)). When you show or publish figures from it, credit **"Data by CalcBloc (calcbloc.com/data)"** with a link to [calcbloc.com/data](https://calcbloc.com/data?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss).
+- The canonical, most recent version of each table is its country page on calcbloc.com.
 - **API:** free use requires a visible "Data by CalcBloc" link wherever the figures are shown. Every response includes an `attribution` block with the wording and the page to link to. See the [API terms](https://calcbloc.com/developers/terms?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss).
 
 The tables are reference data compiled from official sources. They are not tax, legal or financial advice. Check the cited source before relying on a figure.
