@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CalcBloc;
 
+use CalcBloc\Internal\CountryCodes;
 use CalcBloc\Internal\Json;
 
 /**
@@ -28,7 +29,8 @@ final class Tables
     /**
      * Loads one table.
      *
-     * @param string $country Country code, e.g. `us`, `uk`, `new-zealand` (see listCountries()).
+     * @param string $country Country: short code (`nz`, `de`, `uk` or `gb`), ISO code (`NZ`), English name
+     *        (`New Zealand`) or country key (`new-zealand`); case-insensitive (see listCountries()).
      * @param string|null $year Tax year, e.g. `2026` or `2026-27`; null or `latest` for the country's current year.
      * @param string|null $region Region code or slug, e.g. `ca` or `california`, `on`, `scotland`; null for the national table.
      *
@@ -95,18 +97,25 @@ final class Tables
     }
 
     /**
-     * One bundled country by code (case-insensitive), or null.
+     * One bundled country, or null. Accepts, case-insensitively, the country key (`new-zealand`), the short code
+     * (ISO 3166-1 alpha-2: `nz`, `de`; `uk` or `gb` for the United Kingdom), the ISO code (`NZ`) and the English
+     * name (`New Zealand`), as the API does.
      */
     public static function country(string $country): ?CountryInfo
     {
-        $code = strtolower(trim($country));
+        $code = CountryCodes::normalise($country);
+        $key = CountryCodes::key($country);
+        $byName = null;
         foreach (self::listCountries() as $info) {
-            if ($info->country === $code) {
+            if ($info->country === $code || $info->country === $key) {
                 return $info;
+            }
+            if ($byName === null && CountryCodes::normalise($info->name) === $code) {
+                $byName = $info;
             }
         }
 
-        return null;
+        return $byName;
     }
 
     /**

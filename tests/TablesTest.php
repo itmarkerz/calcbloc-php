@@ -6,6 +6,7 @@ namespace CalcBloc\Tests;
 
 use CalcBloc\CalcBlocException;
 use CalcBloc\CountryInfo;
+use CalcBloc\Internal\CountryCodes;
 use CalcBloc\Section;
 use CalcBloc\Source;
 use CalcBloc\Tables;
@@ -113,6 +114,47 @@ final class TablesTest extends TestCase
         } catch (CalcBlocException $e) {
             self::assertSame('unsupported_country', $e->getErrorCode());
             self::assertNull($e->getStatus());
+        }
+    }
+
+    public function testShortCodesIsoCodesAndNames(): void
+    {
+        $nz = Tables::load('new-zealand');
+        foreach (['nz', 'NZ', 'Nz', ' nz ', 'New Zealand', 'new zealand', 'NEW-ZEALAND', 'new_zealand'] as $id) {
+            self::assertSame($nz, Tables::load($id), $id);
+        }
+        self::assertSame('uk', Tables::load('gb')->country);
+        self::assertSame('uk', Tables::load('GB')->country);
+        self::assertSame('uk', Tables::load('United Kingdom')->country);
+        self::assertSame('germany', Tables::load('de')->country);
+        self::assertSame('germany', Tables::load('DE', '2026')->country);
+        self::assertSame('turkey', Tables::country('Türkiye')?->country);
+        self::assertSame('uae', Tables::country('ae')?->country);
+        self::assertSame('canada', Tables::load('ca', null, 'on')->country, 'short code with a region');
+        self::assertNull(Tables::country('zz'));
+    }
+
+    public function testEveryBundledCountryHasItsShortCodeIsoCodeAndName(): void
+    {
+        foreach (Tables::listCountries() as $c) {
+            self::assertArrayHasKey($c->country, CountryCodes::CODES, "{$c->country}: add it to CountryCodes");
+            [$short, $iso] = CountryCodes::CODES[$c->country];
+            self::assertMatchesRegularExpression('~^[a-z]{2}$~', $short);
+            self::assertSame($c->country, Tables::country($short)?->country, "$short");
+            self::assertSame($c->country, Tables::country($iso)?->country, "$iso");
+            self::assertSame($c->country, Tables::country($c->name)?->country, $c->name);
+            self::assertSame($c->country, Tables::country(strtoupper($c->country))?->country, $c->country);
+        }
+    }
+
+    public function testUnknownShortCode(): void
+    {
+        try {
+            Tables::load('XX');
+            self::fail('expected an exception');
+        } catch (CalcBlocException $e) {
+            self::assertSame('unsupported_country', $e->getErrorCode());
+            self::assertStringContainsString('No bundled tax tables for "XX"', $e->getMessage());
         }
     }
 

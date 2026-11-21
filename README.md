@@ -127,6 +127,7 @@ use CalcBloc\Tables;
 
 Tables::listCountries();                    // list<CountryInfo>: code, name, currency, years, regions, pageUrl, apiUrl, lastVerified
 Tables::load('uk');                         // current tax year (same as 'latest')
+Tables::load('nz');                         // short code, ISO code ('NZ'), English name or key ('new-zealand')
 Tables::load('uk', '2025-26');              // an earlier year, where bundled
 Tables::load('uk', null, 'scotland');       // a region: US state, Canadian province, Scotland or Wales, and more
 Tables::manifest();                         // the raw data/manifest.json
@@ -170,7 +171,7 @@ $both = $client->compare('uk', 'ireland', 60000, ['currency' => 'GBP']); // Comp
 $us   = $client->netSalary('us', 90000, ['region' => 'ca', 'filing_status' => 'mfj']); // short codes: 'nz', 'de', 'ae', ...
 ```
 
-API calls accept a country by its short code (ISO 3166-1 alpha-2 in lower case, with `uk` for the United Kingdom; `gb` also works), such as `nz`, `de` or `ae`, as well as its English name or the older key (`new-zealand`, `germany`). Responses still carry the older key in `country`. The offline `Tables` use the codes in the [coverage](#coverage) table.
+API calls accept a country by its short code (ISO 3166-1 alpha-2 in lower case, with `uk` for the United Kingdom; `gb` also works), such as `nz`, `de` or `ae`, as well as its English name or the older key (`new-zealand`, `germany`). Responses still carry the older key in `country`. The offline `Tables` accept the same short codes, ISO codes (`NZ`) and English names (`New Zealand`), case-insensitively, next to the keys in the [coverage](#coverage) table.
 
 `region` is required for take-home pay in `us` and `ca`, and for employer cost in `us`, `au` and `ca`; without it the API answers HTTP 400 `missing_parameter` with the valid codes. The US `filing_status` values are `single`, `mfj` and `hoh` (`married` and `married_joint` are accepted for `mfj`, `head_of_household` for `hoh`).
 

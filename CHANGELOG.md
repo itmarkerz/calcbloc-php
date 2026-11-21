@@ -17,6 +17,10 @@ Changes to the tax figures themselves are listed in the [CalcBloc data changelog
 - Docs: API calls accept short country codes (`nz`, `de`, `ae`, `uk`), the US `filing_status` example uses `mfj`,
   `region` is required for take-home pay in `us`/`ca` and for employer cost in `us`/`au`/`ca`, and equity
   compensation, bonus/supplemental and cross-border withholding are noted as not supported yet.
+- `Tables::load()` and `Tables::country()` accept, case-insensitively, each bundled country's short code (`nz`,
+  `de`; `uk` or `gb`), ISO code (`NZ`) and English name (`New Zealand`) as well as the key (`new-zealand`), and
+  `Client::taxTables()` maps them to the key before building the `/tax-tables/{country}` path. The mapping mirrors
+  the API's country codes.
 - `Client` reads the API key from the `CALCBLOC_API_KEY` environment variable when none is passed (`''` still means
   no key) and has `hasApiKey()`. Without a key every endpoint works within the keyless allowance; a
   `RateLimitException` without a key says the free allowance is used up, links to a free API key

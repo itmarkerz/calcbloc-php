@@ -8,6 +8,7 @@ use CalcBloc\Http\CurlTransport;
 use CalcBloc\Http\Response;
 use CalcBloc\Http\StreamTransport;
 use CalcBloc\Http\Transport;
+use CalcBloc\Internal\CountryCodes;
 use CalcBloc\Internal\Json;
 
 /**
@@ -102,7 +103,8 @@ final class Client
         if ($format !== 'json' && $format !== 'csv') {
             throw new \InvalidArgumentException('Format must be "json" or "csv".');
         }
-        $path = 'tax-tables/' . rawurlencode(strtolower(trim($country))) . '/' . rawurlencode(trim($year));
+        $key = CountryCodes::key($country) ?? strtolower(trim($country));
+        $path = 'tax-tables/' . rawurlencode($key) . '/' . rawurlencode(trim($year));
         $query = ['region' => $region !== null && trim($region) !== '' ? trim($region) : null];
         if ($format === 'csv') {
             $query['format'] = 'csv';

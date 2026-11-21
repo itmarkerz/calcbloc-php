@@ -103,6 +103,26 @@ final class ClientTest extends TestCase
         self::assertSame(4999, $client->lastRateLimit()->remaining);
     }
 
+    public function testTaxTablesMapsShortCodesToTheCountryKey(): void
+    {
+        $transport = new FakeTransport();
+        foreach (['NZ', 'nz', 'New Zealand', 'new-zealand', 'gb', 'de', 'atlantis'] as $_) {
+            $transport->queue(200, 'section_id
+');
+        }
+        $client = $this->client($transport);
+        $paths = [];
+        foreach (['NZ', 'nz', 'New Zealand', 'new-zealand', 'gb', 'de', 'Atlantis'] as $id) {
+            $client->taxTables($id, 'latest', null, 'csv');
+            $paths[] = substr($transport->last()['url'], strlen('https://calcbloc.com/api/v1/tax-tables/'));
+        }
+        self::assertSame([
+            'new-zealand/latest?format=csv', 'new-zealand/latest?format=csv', 'new-zealand/latest?format=csv',
+            'new-zealand/latest?format=csv', 'uk/latest?format=csv', 'germany/latest?format=csv',
+            'atlantis/latest?format=csv', // unknown values go to the API as given (lower case), which answers unsupported_country
+        ], $paths);
+    }
+
     public function testTaxTablesRegionAndCsv(): void
     {
         $csv = "section_id,section,group\r\nincome-tax,Income tax,income-tax\r\n";
