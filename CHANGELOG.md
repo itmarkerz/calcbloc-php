@@ -18,9 +18,9 @@ Changes to the tax figures themselves are listed in the [CalcBloc data changelog
   `region` is required for take-home pay in `us`/`ca` and for employer cost in `us`/`au`/`ca`, and equity
   compensation, bonus/supplemental and cross-border withholding are noted as not supported yet.
 - `Client` reads the API key from the `CALCBLOC_API_KEY` environment variable when none is passed (`''` still means
-  no key) and has `hasApiKey()`. Without a key every endpoint works for 50 requests a day; a `RateLimitException`
-  without a key now says the free allowance is used up, links to a free API key (5,000 requests a day,
-  `Client::KEYS_URL`) and shows how to set it.
+  no key) and has `hasApiKey()`. Without a key every endpoint works within the keyless allowance; a
+  `RateLimitException` without a key says the free allowance is used up, links to a free API key
+  (`Client::KEYS_URL`) and shows how to set it.
 - Bundled data refreshed to the CalcBloc data manifest of 2026-11-13: 41 countries and 246 tables. New: Latvia,
   Croatia (with 21 regional tables), Estonia, Bulgaria, Lithuania, Malta, Cyprus, Iceland, Ukraine, Liechtenstein,
   Serbia and Türkiye.
