@@ -8,19 +8,21 @@ use CalcBloc\Http\CurlTransport;
 use CalcBloc\Http\Response;
 use CalcBloc\Http\StreamTransport;
 use CalcBloc\Http\Transport;
+use CalcBloc\Internal\CountryCodes;
 use CalcBloc\Internal\Json;
 
 /**
  * Client for the CalcBloc API (https://calcbloc.com/developers).
  *
- * Every endpoint works without a key for 50 requests a day (5 a minute) per IP address. A free API key, sent in
- * the X-API-Key header, raises that to 5,000 a day (60 a minute). The key comes from the constructor or, when none
- * is passed, from the CALCBLOC_API_KEY environment variable. When the free allowance without a key is used up,
- * RateLimitException says so and links to the keys page; see https://calcbloc.com/developers#limits.
+ * Every endpoint works without a key, within a free daily and per-minute allowance per IP address. A free API key
+ * (email only), sent in the X-API-Key header, has much higher limits. The key comes from the constructor or, when
+ * none is passed, from the CALCBLOC_API_KEY environment variable. When the free allowance without a key is used up,
+ * RateLimitException says so and links to the keys page. Current limits: https://calcbloc.com/developers#limits.
  *
  *     $client = new CalcBloc\Client();                    // no key, or CALCBLOC_API_KEY from the environment
- *     $client = new CalcBloc\Client(apiKey: 'cb_...');    // a free key: 5,000 requests a day
+ *     $client = new CalcBloc\Client(apiKey: 'cb_...');    // a free key: much higher limits
  *     $table = $client->taxTables('canada', 'latest', region: 'on');
+ *     $pay = $client->netSalary('nz', 80000);             // short codes (ISO alpha-2, `uk` for the UK) work too
  */
 final class Client
 {
@@ -35,11 +37,13 @@ final class Client
     private readonly string $baseUrl;
     private readonly Transport $transport;
     private ?RateLimit $lastRateLimit = null;
+    /** The daily request limit the API last reported (X-RateLimit-Limit), quoted in the rate-limit message. */
+    private ?int $dailyLimit = null;
 
     /**
      * @param string|null $apiKey Your API key (free at https://calcbloc.com/developers/keys). Null reads the
      *                            CALCBLOC_API_KEY environment variable; '' (or neither set) calls without a key,
-     *                            which allows 50 requests a day.
+     *                            within the free allowance per IP address (https://calcbloc.com/developers#limits).
      * @param string $baseUrl API origin; the client calls {baseUrl}/api/v1/...
      * @param float $timeout Seconds before a request is abandoned.
      * @param Transport|null $transport HTTP transport; default: ext-curl when loaded, else PHP streams.
@@ -85,7 +89,8 @@ final class Client
      * GET /api/v1/tax-tables/{country}/{year}: official income tax brackets, thresholds, employee and employer rates
      * for a country and tax year, with the source of every figure.
      *
-     * @param string $country Country code, e.g. `us`, `germany`, `new-zealand`.
+     * @param string $country Country: a short code (ISO 3166-1 alpha-2 in lower case, `uk` for the UK), e.g. `us`,
+     *        `de`, `nz`, the English name, or the older key (`germany`, `new-zealand`).
      * @param string $year A tax year (e.g. `2026`, `2026-27`) or `latest`.
      * @param string|null $region Region code: US state (`ca`), Canadian province or territory (`on`), `scotland` or
      *        `wales`, and the other regions listed by countries(). Returns the regional figures only.
@@ -98,7 +103,8 @@ final class Client
         if ($format !== 'json' && $format !== 'csv') {
             throw new \InvalidArgumentException('Format must be "json" or "csv".');
         }
-        $path = 'tax-tables/' . rawurlencode(strtolower(trim($country))) . '/' . rawurlencode(trim($year));
+        $key = CountryCodes::key($country) ?? strtolower(trim($country));
+        $path = 'tax-tables/' . rawurlencode($key) . '/' . rawurlencode(trim($year));
         $query = ['region' => $region !== null && trim($region) !== '' ? trim($region) : null];
         if ($format === 'csv') {
             $query['format'] = 'csv';
@@ -110,12 +116,14 @@ final class Client
     }
 
     /**
-     * GET /api/v1/net-salary: take-home pay for an annual salary (no key needed for 50 a day).
+     * GET /api/v1/net-salary: take-home pay for an annual salary (no key needed within the free allowance).
      *
-     * @param string $country Country code with a calculation engine (see ApiCountry::$tablesOnly).
+     * @param string $country Country with a calculation engine (see ApiCountry::$tablesOnly): short code (`nz`),
+     *        English name or older key, as for taxTables().
      * @param int|float $salary Annual gross salary in the country's currency (India: annual CTC).
-     * @param array<string, scalar|null> $params Other query parameters: `year`, `region` and the country's own
-     *        parameters as listed by countries() (e.g. `filing_status` for the US).
+     * @param array<string, scalar|null> $params Other query parameters: `year`, `region` (required for `us` and
+     *        `ca`) and the country's own parameters as listed by countries() (e.g. `filing_status` for the US:
+     *        `single`, `mfj` or `hoh`).
      */
     public function netSalary(string $country, int|float $salary, array $params = []): CalculationResult
     {
@@ -123,9 +131,11 @@ final class Client
     }
 
     /**
-     * GET /api/v1/employer-cost: total cost of employing someone at an annual salary (no key needed for 50 a day).
+     * GET /api/v1/employer-cost: total cost of employing someone at an annual salary (no key needed within the free
+     * allowance).
      *
-     * @param array<string, scalar|null> $params Other query parameters, as for netSalary().
+     * @param array<string, scalar|null> $params Other query parameters, as for netSalary(); `region` is required
+     *        for `us`, `au` and `ca`.
      */
     public function employerCost(string $country, int|float $salary, array $params = []): CalculationResult
     {
@@ -133,7 +143,7 @@ final class Client
     }
 
     /**
-     * GET /api/v1/compare: the same salary in two countries (no key needed for 50 a day).
+     * GET /api/v1/compare: the same salary in two countries (no key needed within the free allowance).
      *
      * @param array<string, scalar|null> $params `currency` (a's or b's), `us_state`, `uk_region`, `ca_province`, `in_state`.
      */
@@ -192,6 +202,10 @@ final class Client
         if ($rateLimit !== null) {
             $this->lastRateLimit = $rateLimit;
         }
+        $limit = $response->header('x-ratelimit-limit');
+        if ($limit !== null && ctype_digit(trim($limit)) && (int) $limit > 0) {
+            $this->dailyLimit = (int) $limit;
+        }
         if ($response->status >= 200 && $response->status < 300) {
             return $response;
         }
@@ -215,7 +229,7 @@ final class Client
             $retry = $response->header('retry-after');
             $retryAfter = $retry !== null && is_numeric($retry) ? (int) $retry : null;
             if ($this->apiKey === null) {
-                $message = self::noKeyLimitMessage($message, $retryAfter);
+                $message = self::noKeyLimitMessage($message, $retryAfter, $this->dailyLimit);
             }
 
             return new RateLimitException($message, $docs, $retryAfter, $rateLimit, $response->headers);
@@ -240,15 +254,19 @@ final class Client
         return is_string($value) && trim($value) !== '' ? $value : null;
     }
 
-    /** The 429 message without a key: the free allowance is used up; add a free key and how to set it. */
-    private static function noKeyLimitMessage(string $apiMessage, ?int $retryAfter): string
+    /**
+     * The 429 message without a key: the free allowance is used up; add a free key and how to set it. No limit is
+     * typed in here: the daily figure is the API's X-RateLimit-Limit header, quoted once a response has carried it.
+     */
+    private static function noKeyLimitMessage(string $apiMessage, ?int $retryAfter, ?int $dailyLimit): string
     {
         $perMinute = stripos($apiMessage, 'minute') !== false && ($retryAfter === null || $retryAfter <= 60);
+        $perDay = $dailyLimit !== null ? ' (' . number_format($dailyLimit) . ' requests a day)' : '';
         $usedUp = $perMinute
-            ? 'The free allowance without a key (5 requests a minute, 50 a day) is used up for this minute.'
-            : 'The free allowance of 50 requests a day without a key is used up.';
+            ? 'The free per-minute allowance without a key is used up for this minute.'
+            : 'The free daily allowance without a key' . $perDay . ' is used up.';
 
-        return $usedUp . ' Add your free API key (5,000 requests a day): ' . self::KEYS_URL
+        return $usedUp . ' Add your free API key (email only, much higher limits): ' . self::KEYS_URL
             . ' (set it with new Client(apiKey: \'...\') or the ' . self::API_KEY_ENV . ' environment variable).';
     }
 }

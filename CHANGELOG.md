@@ -8,10 +8,23 @@ Changes to the tax figures themselves are listed in the [CalcBloc data changelog
 
 ### Changed
 
+- For CalcBloc API 1.7: the keyless limits are now 300 requests a day and 20 a minute per IP address
+  (see [calcbloc.com/developers#limits](https://calcbloc.com/developers#limits)). The `RateLimitException` message
+  without a key no longer states fixed numbers: it quotes the daily limit from the `X-RateLimit-Limit` header the
+  client last received ("The free daily allowance without a key (300 requests a day) is used up."), or says it
+  without a number before any response has carried one, and still links to a free email-only key and
+  `CALCBLOC_API_KEY`. PHPDoc describes the limits in general terms and links to the limits page.
+- Docs: API calls accept short country codes (`nz`, `de`, `ae`, `uk`), the US `filing_status` example uses `mfj`,
+  `region` is required for take-home pay in `us`/`ca` and for employer cost in `us`/`au`/`ca`, and equity
+  compensation, bonus/supplemental and cross-border withholding are noted as not supported yet.
+- `Tables::load()` and `Tables::country()` accept, case-insensitively, each bundled country's short code (`nz`,
+  `de`; `uk` or `gb`), ISO code (`NZ`) and English name (`New Zealand`) as well as the key (`new-zealand`), and
+  `Client::taxTables()` maps them to the key before building the `/tax-tables/{country}` path. The mapping mirrors
+  the API's country codes.
 - `Client` reads the API key from the `CALCBLOC_API_KEY` environment variable when none is passed (`''` still means
-  no key) and has `hasApiKey()`. Without a key every endpoint works for 50 requests a day; a `RateLimitException`
-  without a key now says the free allowance is used up, links to a free API key (5,000 requests a day,
-  `Client::KEYS_URL`) and shows how to set it.
+  no key) and has `hasApiKey()`. Without a key every endpoint works within the keyless allowance; a
+  `RateLimitException` without a key says the free allowance is used up, links to a free API key
+  (`Client::KEYS_URL`) and shows how to set it.
 - Bundled data refreshed to the CalcBloc data manifest of 2026-11-13: 41 countries and 246 tables. New: Latvia,
   Croatia (with 21 regional tables), Estonia, Bulgaria, Lithuania, Malta, Cyprus, Iceland, Ukraine, Liechtenstein,
   Serbia and Türkiye.

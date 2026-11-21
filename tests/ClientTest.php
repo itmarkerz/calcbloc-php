@@ -103,6 +103,26 @@ final class ClientTest extends TestCase
         self::assertSame(4999, $client->lastRateLimit()->remaining);
     }
 
+    public function testTaxTablesMapsShortCodesToTheCountryKey(): void
+    {
+        $transport = new FakeTransport();
+        foreach (['NZ', 'nz', 'New Zealand', 'new-zealand', 'gb', 'de', 'atlantis'] as $_) {
+            $transport->queue(200, 'section_id
+');
+        }
+        $client = $this->client($transport);
+        $paths = [];
+        foreach (['NZ', 'nz', 'New Zealand', 'new-zealand', 'gb', 'de', 'Atlantis'] as $id) {
+            $client->taxTables($id, 'latest', null, 'csv');
+            $paths[] = substr($transport->last()['url'], strlen('https://calcbloc.com/api/v1/tax-tables/'));
+        }
+        self::assertSame([
+            'new-zealand/latest?format=csv', 'new-zealand/latest?format=csv', 'new-zealand/latest?format=csv',
+            'new-zealand/latest?format=csv', 'uk/latest?format=csv', 'germany/latest?format=csv',
+            'atlantis/latest?format=csv', // unknown values go to the API as given (lower case), which answers unsupported_country
+        ], $paths);
+    }
+
     public function testTaxTablesRegionAndCsv(): void
     {
         $csv = "section_id,section,group\r\nincome-tax,Income tax,income-tax\r\n";
@@ -187,7 +207,7 @@ final class ClientTest extends TestCase
     {
         $transport = (new FakeTransport())->queue(429, ['error' => [
             'code' => 'rate_limited', 'message' => 'Too many requests this minute (limit 60).', 'docs' => 'https://calcbloc.com/developers#limits',
-        ]], ['Retry-After' => '42', 'X-RateLimit-Limit' => '60', 'X-RateLimit-Remaining' => '0', 'X-RateLimit-Reset' => '42']);
+        ]], ['Retry-After' => '42', 'X-RateLimit-Limit' => '5000', 'X-RateLimit-Remaining' => '0', 'X-RateLimit-Reset' => '42']);
         try {
             $this->client($transport)->taxTables('us');
             self::fail('expected an exception');
@@ -207,14 +227,15 @@ final class ClientTest extends TestCase
     public function testRateLimitWithoutKeyAsksForAFreeKey(): void
     {
         $transport = (new FakeTransport())->queue(429, ['error' => [
-            'code' => 'rate_limited', 'message' => 'Daily limit of 50 requests reached.', 'docs' => 'https://calcbloc.com/developers#limits',
-        ]], ['Retry-After' => '36000', 'X-RateLimit-Limit' => '50', 'X-RateLimit-Remaining' => '0', 'X-RateLimit-Reset' => '36000']);
+            'code' => 'rate_limited', 'message' => 'Daily limit of 300 requests reached.', 'docs' => 'https://calcbloc.com/developers#limits',
+        ]], ['Retry-After' => '36000', 'X-RateLimit-Limit' => '300', 'X-RateLimit-Remaining' => '0', 'X-RateLimit-Reset' => '36000']);
         try {
             $this->client($transport, null)->netSalary('uk', 30000);
             self::fail('expected an exception');
         } catch (RateLimitException $e) {
             self::assertArrayNotHasKey('X-API-Key', $transport->last()['headers']);
-            self::assertStringStartsWith('The free allowance of 50 requests a day without a key is used up. Add your free API key (5,000 requests a day): ', $e->getMessage());
+            // The daily figure is the X-RateLimit-Limit header of the response, not a number typed into the client.
+            self::assertStringStartsWith('The free daily allowance without a key (300 requests a day) is used up. Add your free API key (email only, much higher limits): ', $e->getMessage());
             self::assertStringContainsString(self::KEYS_URL, $e->getMessage());
             self::assertSame(self::KEYS_URL, Client::KEYS_URL);
             self::assertStringContainsString("new Client(apiKey: '...')", $e->getMessage());
@@ -224,15 +245,45 @@ final class ClientTest extends TestCase
         }
     }
 
+    public function testRateLimitWithoutKeyQuotesTheLimitOfAnEarlierResponse(): void
+    {
+        $transport = (new FakeTransport())
+            ->queue(200, ['countries' => []], ['X-RateLimit-Limit' => '1200', 'X-RateLimit-Remaining' => '1', 'X-RateLimit-Reset' => '600'])
+            ->queue(429, ['error' => ['code' => 'rate_limited', 'message' => 'Daily limit reached.']], ['Retry-After' => '600']);
+        $client = $this->client($transport, null);
+        $client->countries();
+        try {
+            $client->countries();
+            self::fail('expected an exception');
+        } catch (RateLimitException $e) {
+            self::assertStringStartsWith('The free daily allowance without a key (1,200 requests a day) is used up. Add your free API key', $e->getMessage());
+        }
+    }
+
+    public function testRateLimitWithoutKeyStatesNoNumberWhenTheLimitIsUnknown(): void
+    {
+        $transport = (new FakeTransport())->queue(429, ['error' => ['code' => 'rate_limited', 'message' => 'Daily limit reached.']], ['Retry-After' => '36000']);
+        try {
+            $this->client($transport, null)->countries();
+            self::fail('expected an exception');
+        } catch (RateLimitException $e) {
+            self::assertStringStartsWith('The free daily allowance without a key is used up. Add your free API key (email only, much higher limits): ', $e->getMessage());
+            self::assertDoesNotMatchRegularExpression('/\d/', $e->getMessage());
+            self::assertStringContainsString('CALCBLOC_API_KEY', $e->getMessage());
+        }
+    }
+
     public function testRateLimitWithoutKeyPerMinute(): void
     {
-        $transport = (new FakeTransport())->queue(429, ['error' => ['code' => 'rate_limited', 'message' => 'Too many requests this minute (limit 5).']], ['Retry-After' => '20']);
+        $transport = (new FakeTransport())->queue(429, ['error' => ['code' => 'rate_limited', 'message' => 'Too many requests this minute (limit 20).']], ['Retry-After' => '20']);
         try {
             $this->client($transport, '')->countries();
             self::fail('expected an exception');
         } catch (RateLimitException $e) {
-            self::assertStringStartsWith('The free allowance without a key (5 requests a minute, 50 a day) is used up for this minute.', $e->getMessage());
+            self::assertStringStartsWith('The free per-minute allowance without a key is used up for this minute. Add your free API key (email only, much higher limits): ', $e->getMessage());
+            self::assertDoesNotMatchRegularExpression('/\d/', $e->getMessage());
             self::assertStringContainsString(self::KEYS_URL, $e->getMessage());
+            self::assertStringContainsString('CALCBLOC_API_KEY', $e->getMessage());
         }
     }
 
@@ -306,7 +357,7 @@ final class ClientTest extends TestCase
             {
                 $this->request = $request;
 
-                return new Psr7Response(200, ['Content-Type' => 'application/json', 'X-RateLimit-Limit' => '50', 'X-RateLimit-Remaining' => '49', 'X-RateLimit-Reset' => '86000'], '{"countries":[]}');
+                return new Psr7Response(200, ['Content-Type' => 'application/json', 'X-RateLimit-Limit' => '300', 'X-RateLimit-Remaining' => '299', 'X-RateLimit-Reset' => '86000'], '{"countries":[]}');
             }
         };
         $client = new Client('k', transport: new Psr18Transport($psrClient, $factory));
@@ -314,7 +365,7 @@ final class ClientTest extends TestCase
         self::assertNotNull($psrClient->request);
         self::assertSame('k', $psrClient->request->getHeaderLine('X-API-Key'));
         self::assertSame('https://calcbloc.com/api/v1/countries', (string) $psrClient->request->getUri());
-        self::assertSame(49, $client->lastRateLimit()?->remaining);
+        self::assertSame(299, $client->lastRateLimit()?->remaining);
     }
 
     public function testPsr18ClientErrorBecomesTransportException(): void
