@@ -11,7 +11,7 @@
 `calcbloc/calcbloc` is the PHP package for [CalcBloc](https://calcbloc.com/?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) tax data. It does two things:
 
 - **Offline tax tables.** Official **income tax brackets**, **social security rates**, payroll thresholds and employer contributions for the countries listed [below](#coverage), bundled as JSON. No network and no API key. Every figure carries the official source it comes from and the date it was last checked.
-- **API client.** A typed client for the [CalcBloc API](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss): tax tables for every country, year and region, plus net salary, employer cost and two-country salary comparison from the same engines as the calculators on calcbloc.com.
+- **API client.** A typed client for the [CalcBloc API](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss): tax tables for every country, year and region, plus net salary, employer cost and two-country salary comparison from the same engines as the calculators on calcbloc.com. Equity compensation (RSUs, stock options), bonus/supplemental withholding and cross-border withholding are not supported yet.
 
 PHP 8.1 or later, no required dependencies.
 
@@ -157,7 +157,7 @@ Errors use the API's error codes: `Tables::load('atlantis')` throws a `CalcBlocE
 ```php
 use CalcBloc\Client;
 
-$client = new Client(); // no key (50 requests a day), or CALCBLOC_API_KEY; new Client(apiKey: 'cb_...') to pass one
+$client = new Client(); // no key (free allowance per IP address), or CALCBLOC_API_KEY; new Client(apiKey: 'cb_...') to pass one
 
 $countries = $client->countries();                              // list<ApiCountry>: years, regions, endpoints and their parameters
 $table     = $client->taxTables('canada', 'latest', 'on');      // TaxTable (same object as Tables::load())
@@ -167,25 +167,30 @@ $pay  = $client->netSalary('uk', 50000, ['region' => 'scotland']);    // Calcula
 $pay->summary['netAnnual'];                                            // plus results, breakdown, notes, calculatorUrl
 $cost = $client->employerCost('germany', 65000);                      // CalculationResult: summary['totalCost'], ...
 $both = $client->compare('uk', 'ireland', 60000, ['currency' => 'GBP']); // ComparisonResult
+$us   = $client->netSalary('us', 90000, ['region' => 'ca', 'filing_status' => 'mfj']); // short codes: 'nz', 'de', 'ae', ...
 ```
+
+API calls accept a country by its short code (ISO 3166-1 alpha-2 in lower case, with `uk` for the United Kingdom; `gb` also works), such as `nz`, `de` or `ae`, as well as its English name or the older key (`new-zealand`, `germany`). Responses still carry the older key in `country`. The offline `Tables` use the codes in the [coverage](#coverage) table.
+
+`region` is required for take-home pay in `us` and `ca`, and for employer cost in `us`, `au` and `ca`; without it the API answers HTTP 400 `missing_parameter` with the valid codes. The US `filing_status` values are `single`, `mfj` and `hoh` (`married` and `married_joint` are accepted for `mfj`, `head_of_household` for `hoh`).
 
 Each country's parameters for `net-salary` and `employer-cost` (for example `filing_status` in the US or `tax_class` in Germany) are listed by `countries()` and in the [OpenAPI description](https://calcbloc.com/api/openapi.json). Countries marked `tablesOnly` have tax tables but no calculation engine yet. The calculation endpoints answer them with HTTP 400 `unsupported_country`.
 
 ### Free use and API keys
 
 - **Offline tables need no key and no network**: `Tables` reads the JSON bundled in the package.
-- **API calls work without a key** for 50 requests a day and 5 a minute per IP address, on every endpoint.
+- **API calls work without a key** for 300 requests a day and 20 a minute per IP address (see [calcbloc.com/developers#limits](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss#limits)), on every endpoint.
 - **Add a free API key for 5,000 requests a day** (60 a minute). Get one instantly at [calcbloc.com/developers/keys](https://calcbloc.com/developers/keys?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) (enter your email address; the key is shown once).
 - **Set it** with `new Client(apiKey: 'cb_...')`, or in the `CALCBLOC_API_KEY` environment variable, which `new Client()` reads when no key is passed (pass `''` to call without a key even when the variable is set). The client sends it in the `X-API-Key` header. Keys in the URL are refused.
 
 | Access | Per day | Per minute |
 | --- | --- | --- |
-| No key (per IP address) | 50 | 5 |
+| No key (per IP address) | 300 | 20 |
 | Free key | 5,000 | 60 |
 
-When the free allowance without a key is used up, the client throws a `RateLimitException` whose message says so, links to the keys page and shows how to set the key. With a key, the message gives that key's limit.
+When the free allowance without a key is used up, the client throws a `RateLimitException` whose message says so (with the daily limit from the API's `X-RateLimit-Limit` header once a response has carried it), links to the keys page and shows how to set the key. With a key, the message gives that key's limit.
 
-Days reset at midnight UTC. `$client->lastRateLimit()` returns the `X-RateLimit-*` values of the last response. Current limits and commercial terms are on the [developer page](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss#limits). Responses can be cached for a day, so cache on your side, or use the offline tables when the bundled year is the one you need.
+Days reset at midnight UTC. `$client->lastRateLimit()` returns the `X-RateLimit-*` values of the last response (`limit` is the daily limit). Current limits and commercial terms are on the [developer page](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss#limits). Responses can be cached for a day, so cache on your side, or use the offline tables when the bundled year is the one you need.
 
 ### Errors
 
@@ -223,7 +228,7 @@ $client = new Client($apiKey, transport: new Psr18Transport($psr18Client, $psr17
 
 | | Bundled tables (`Tables`) | API (`Client`) |
 | --- | --- | --- |
-| Network, key | None | HTTPS; 50 requests a day without a key, 5,000 with a free key |
+| Network, key | None | HTTPS; 300 requests a day and 20 a minute per IP address without a key (see [calcbloc.com/developers#limits](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss#limits)), 5,000 a day with a free key |
 | Content | Tax tables as of this release | Always the current published tables |
 | Calculations | `taxFromBands()` on one set of brackets | Full net salary, employer cost and comparison engines |
 | Limits | None | See [free use and API keys](#free-use-and-api-keys) |

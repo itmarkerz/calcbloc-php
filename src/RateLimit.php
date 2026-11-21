@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace CalcBloc;
 
 /**
- * The X-RateLimit-* headers of an API response: the limit of the window that is closest to running out, the requests
- * left in it, and the seconds until it resets.
+ * The X-RateLimit-* headers of an API response: the daily request limit of your key (or of your IP address without
+ * a key), the requests left today, and the seconds until the day resets (midnight UTC).
  */
 final class RateLimit
 {
