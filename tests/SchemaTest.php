@@ -87,7 +87,9 @@ final class SchemaTest extends TestCase
                     foreach ($s->rows as $i => $row) {
                         self::assertTrue(is_int($row['from']) || is_float($row['from']), "$where band $i: from");
                         self::assertTrue(is_int($row['rate']) || is_float($row['rate']), "$where band $i: rate");
-                        self::assertTrue($row['rate'] >= 0 && $row['rate'] <= 1, "$where band $i: rate is a decimal");
+                        // Above 100% only for an ad valorem vehicle registration tax (Hong Kong's first registration tax: 115%, 132%).
+                        $cap = preg_match('/^vehicle-tax$|registration/i', $s->id) === 1 ? 5 : 1;
+                        self::assertTrue($row['rate'] >= 0 && $row['rate'] <= $cap, "$where band $i: rate is a decimal");
                         self::assertGreaterThanOrEqual($previousFrom, $row['from'], "$where band $i: ascending");
                         if ($row['to'] !== null) {
                             self::assertGreaterThan($row['from'], $row['to'], "$where band $i: to > from");

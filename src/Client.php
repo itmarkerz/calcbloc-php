@@ -152,6 +152,110 @@ final class Client
         return ComparisonResult::fromArray($this->json('compare', ['a' => $a, 'b' => $b, 'salary' => $salary] + $params));
     }
 
+    // ----------------------------------------------------------------- API 1.8 and 1.9
+    // These return the API's JSON as an array (every field documented at https://calcbloc.com/developers, plus the
+    // attribution block). Parameters use the API's names.
+
+    /**
+     * GET /api/v1/supplemental-withholding (API 1.8): tax withheld on a bonus, commission, RSU vest, option exercise
+     * or lump sum paid on top of $salary, next to the final tax the payment adds.
+     *
+     * @param array<string, scalar|null> $params `type` (bonus, commission, rsu_vest, option_exercise, lump_sum),
+     *        `region` (required for `us` and `ca`) and the country's own options.
+     * @return array<string, mixed>
+     */
+    public function supplementalWithholding(string $country, int|float $salary, int|float $amount, array $params = []): array
+    {
+        return $this->json('supplemental-withholding', ['country' => $country, 'salary' => $salary, 'amount' => $amount] + $params);
+    }
+
+    /**
+     * GET /api/v1/equity-tax (API 1.8): tax on RSUs and stock options at vest or exercise, and on sale.
+     *
+     * @param string $instrument us: rsu, nso, iso; uk: rsu, emi, csop, unapproved_option; au: ess_upfront,
+     *        ess_deferred, rsu; ca: stock_option; in: esop, rsu.
+     * @param array<string, scalar|null> $params `fmv_event`, `fmv_grant`, `exercise_price`, `sale_date`,
+     *        `sale_price`, `salary`, `region` and the country's options.
+     * @return array<string, mixed>
+     */
+    public function equityTax(string $country, string $instrument, int|float $units, string $grantDate, string $eventDate, array $params = []): array
+    {
+        return $this->json('equity-tax', ['country' => $country, 'instrument' => $instrument, 'units' => $units, 'grant_date' => $grantDate, 'event_date' => $eventDate] + $params);
+    }
+
+    /**
+     * GET /api/v1/cross-border-equity (API 1.9): an RSU vest or option exercise split between the countries worked
+     * in from grant to vest, with each share's estimated tax.
+     *
+     * @param string $periods Comma-separated country:start:end[:workdays], e.g.
+     *        "us:2024-01-01:2024-12-31:220,gb:2025-01-01:2025-06-30:120".
+     * @param array<string, scalar|null> $params `vest_date`, `fmv_event`, `exercise_price`, `currency`,
+     *        `residence`, `grant_country`, `us_citizen`, `salaries` ("us:150000,gb:80000"), `options`.
+     * @return array<string, mixed>
+     */
+    public function crossBorderEquity(string $instrument, int|float $units, string $grantDate, string $eventDate, string $periods, array $params = []): array
+    {
+        return $this->json('cross-border-equity', ['instrument' => $instrument, 'units' => $units, 'grant_date' => $grantDate, 'event_date' => $eventDate, 'periods' => $periods] + $params);
+    }
+
+    /**
+     * GET /api/v1/facts (API 1.9): tax facts by country, tax type, jurisdiction and year, paged with `cursor`.
+     *
+     * @param array<string, scalar|null> $params `country`, `tax_type` (income.pit, consumption.vat...), `level`,
+     *        `jurisdiction` (gb-sct, us-ca), `year`, `limit`, `cursor`.
+     * @return array<string, mixed>
+     */
+    public function facts(array $params = []): array
+    {
+        return $this->json('facts', $params);
+    }
+
+    /**
+     * GET /api/v1/tax-calendar (API 1.9): tax year, next tax year, enacted and announced changes and the next
+     * budget date. Without a country, every country's calendar.
+     *
+     * @return array<string, mixed>
+     */
+    public function taxCalendar(?string $country = null, ?string $region = null): array
+    {
+        return $this->json('tax-calendar', ['country' => $country, 'region' => $region]);
+    }
+
+    /**
+     * GET /api/v1/tariffs (API 1.9): tariff lines of a commodity code in the UK (gb), EU (eu or a member state),
+     * US (us) or Indian (in) tariff.
+     *
+     * @param array<string, scalar|null> $params `origin` (the best preference for that origin), `limit`, `cursor`.
+     * @return array<string, mixed>
+     */
+    public function tariffs(string $destination, string $code, array $params = []): array
+    {
+        return $this->json('tariffs', ['destination' => $destination, 'code' => $code] + $params);
+    }
+
+    /**
+     * GET /api/v1/trade-agreements (API 1.9): trade agreements and preference schemes in a country's tariff.
+     *
+     * @return array<string, mixed>
+     */
+    public function tradeAgreements(string $country, ?string $partner = null): array
+    {
+        return $this->json('trade-agreements', ['country' => $country, 'partner' => $partner]);
+    }
+
+    /**
+     * GET /api/v1/import-duty (API 1.9): duties, import VAT, excise and landed cost of one import. An estimate, not
+     * a customs ruling.
+     *
+     * @param array<string, scalar|null> $params `quantity`, `unit`, `proof_of_origin`, `additional_code`,
+     *        `excise_code`, `documents`, `vat_code`, `transport` (US).
+     * @return array<string, mixed>
+     */
+    public function importDuty(string $destination, string $origin, string $code, int|float $customsValue, array $params = []): array
+    {
+        return $this->json('import-duty', ['destination' => $destination, 'origin' => $origin, 'code' => $code, 'customs_value' => $customsValue] + $params);
+    }
+
     /**
      * The X-RateLimit-* values of the last response, or null before the first request.
      */

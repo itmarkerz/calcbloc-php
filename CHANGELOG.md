@@ -6,6 +6,16 @@ Changes to the tax figures themselves are listed in the [CalcBloc data changelog
 
 ## [Unreleased]
 
+### Added
+
+- For CalcBloc API 1.8 and 1.9: `Client::supplementalWithholding()`, `equityTax()`, `crossBorderEquity()`, `facts()`,
+  `taxCalendar()`, `tariffs()`, `tradeAgreements()` and `importDuty()`. They return the API's JSON as an array.
+- Bundled tables: 133 countries (338 tables), synced from calcbloc-data 2026-11-26; Belgium stays pending. Short
+  codes, ISO codes and names for all of them in `CountryCodes`.
+- The flat `rows` are kept in the data files: since API 1.8 they carry columns the sections do not hold
+  (`tax_type`, `jurisdiction`, `level`, `table_version`). The schema test accepts band rates above 100% for an ad
+  valorem vehicle registration tax (Hong Kong).
+
 ### Changed
 
 - For CalcBloc API 1.7: the keyless limits are now 300 requests a day and 20 a minute per IP address

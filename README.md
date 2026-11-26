@@ -11,7 +11,7 @@
 `calcbloc/calcbloc` is the PHP package for [CalcBloc](https://calcbloc.com/?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) tax data. It does two things:
 
 - **Offline tax tables.** Official **income tax brackets**, **social security rates**, payroll thresholds and employer contributions for the countries listed [below](#coverage), bundled as JSON. No network and no API key. Every figure carries the official source it comes from and the date it was last checked.
-- **API client.** A typed client for the [CalcBloc API](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss): tax tables for every country, year and region, plus net salary, employer cost and two-country salary comparison from the same engines as the calculators on calcbloc.com. Equity compensation (RSUs, stock options), bonus/supplemental withholding and cross-border withholding are not supported yet.
+- **API client.** A typed client for the [CalcBloc API](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss): tax tables for every country, year and region, plus net salary, employer cost and two-country salary comparison from the same engines as the calculators on calcbloc.com. API 1.8 and 1.9 add bonus/supplemental withholding, RSU and stock option tax (also split across countries), tax facts, tax calendars, tariffs, trade agreements and import duty. Cross-border salary withholding (multi-country payroll) and treaty rates are not supported yet.
 
 PHP 8.1 or later, no required dependencies.
 
@@ -169,6 +169,16 @@ $pay->summary['netAnnual'];                                            // plus r
 $cost = $client->employerCost('germany', 65000);                      // CalculationResult: summary['totalCost'], ...
 $both = $client->compare('uk', 'ireland', 60000, ['currency' => 'GBP']); // ComparisonResult
 $us   = $client->netSalary('us', 90000, ['region' => 'ca', 'filing_status' => 'mfj']); // short codes: 'nz', 'de', 'ae', ...
+
+// API 1.8 and 1.9: these return the API's JSON as an array (fields documented at calcbloc.com/developers)
+$bonus = $client->supplementalWithholding('us', 150000, 20000, ['type' => 'bonus', 'region' => 'ca']);
+$emi   = $client->equityTax('uk', 'emi', 1000, '2024-01-15', '2026-03-01', ['fmv_event' => 12, 'exercise_price' => 2]);
+$split = $client->crossBorderEquity('rsu', 500, '2024-01-01', '2026-01-01', 'us:2024-01-01:2024-12-31,gb:2025-01-01:2026-01-01', ['fmv_event' => 80]);
+$facts = $client->facts(['country' => 'uk', 'tax_type' => 'income.pit']);
+$cal   = $client->taxCalendar('au');                         // null: every country
+$lines = $client->tariffs('gb', '0901', ['origin' => 'in']);   // UK, EU (or a member state), US, India
+$deals = $client->tradeAgreements('gb', 'in');
+$duty  = $client->importDuty('gb', 'in', '0901210000', 1000, ['proof_of_origin' => true]); // an estimate, not a customs ruling
 ```
 
 API calls accept a country by its short code (ISO 3166-1 alpha-2 in lower case, with `uk` for the United Kingdom; `gb` also works), such as `nz`, `de` or `ae`, as well as its English name or the older key (`new-zealand`, `germany`). Responses still carry the older key in `country`. The offline `Tables` accept the same short codes, ISO codes (`NZ`) and English names (`New Zealand`), case-insensitively, next to the keys in the [coverage](#coverage) table.
