@@ -56,4 +56,15 @@ final class ApiCountry
     {
         return in_array($endpoint, $this->availableEndpoints, true);
     }
+
+    /**
+     * API 1.10+: how the calculation of `net-salary` or `employer-cost` is checked for this country:
+     * `official-example`, `law-text`, or null (the country's own engine, or an endpoint it does not support).
+     */
+    public function verification(string $endpoint): ?string
+    {
+        $v = $this->endpoints[$endpoint]['verification'] ?? null;
+
+        return is_string($v) ? $v : null;
+    }
 }

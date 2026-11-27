@@ -20,6 +20,9 @@ final class CalculationResult
      * @param list<string> $warnings
      * @param array<string, mixed> $attribution
      * @param array<string, mixed> $data The full response body.
+     * @param string|null $verification API 1.10+: `official-example` (the golden tests reproduce an official worked
+     *        example: Estonia, Poland), `law-text` (worked by hand from the law: Denmark) or null (countries with their
+     *        own engine). With a value, the first note says how the calculation was checked and gives the official URLs.
      */
     public function __construct(
         /** `net-salary` or `employer-cost`. */
@@ -40,6 +43,7 @@ final class CalculationResult
         public readonly array $warnings,
         public readonly array $attribution,
         public readonly array $data,
+        public readonly ?string $verification = null,
     ) {
     }
 
@@ -77,6 +81,7 @@ final class CalculationResult
             $strings($data['warnings'] ?? []),
             $attribution,
             $data,
+            isset($data['verification']) && is_string($data['verification']) ? $data['verification'] : null,
         );
     }
 }

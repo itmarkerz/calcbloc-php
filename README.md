@@ -11,7 +11,7 @@
 `calcbloc/calcbloc` is the PHP package for [CalcBloc](https://calcbloc.com/?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) tax data. It does two things:
 
 - **Offline tax tables.** Official **income tax brackets**, **social security rates**, payroll thresholds and employer contributions for the countries listed [below](#coverage), bundled as JSON. No network and no API key. Every figure carries the official source it comes from and the date it was last checked.
-- **API client.** A typed client for the [CalcBloc API](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss): tax tables for every country, year and region, plus net salary, employer cost and two-country salary comparison from the same engines as the calculators on calcbloc.com. API 1.8 and 1.9 add bonus/supplemental withholding, RSU and stock option tax (also split across countries), tax facts, tax calendars, tariffs, trade agreements and import duty. Cross-border salary withholding (multi-country payroll) and treaty rates are not supported yet.
+- **API client.** A typed client for the [CalcBloc API](https://calcbloc.com/developers?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss): tax tables for every country, year and region, plus net salary, employer cost and two-country salary comparison from the same engines as the calculators on calcbloc.com. API 1.8 and 1.9 add bonus/supplemental withholding, RSU and stock option tax (also split across countries), tax facts, tax calendars, tariffs, trade agreements and import duty; API 1.10 adds double taxation treaties (withholding rate limits, as published) and take-home pay and employer cost for Denmark, Estonia and Poland. Cross-border salary withholding (multi-country payroll) and the double-tax relief amount are not supported yet.
 
 PHP 8.1 or later, no required dependencies.
 
@@ -179,6 +179,13 @@ $cal   = $client->taxCalendar('au');                         // null: every coun
 $lines = $client->tariffs('gb', '0901', ['origin' => 'in']);   // UK, EU (or a member state), US, India
 $deals = $client->tradeAgreements('gb', 'in');
 $duty  = $client->importDuty('gb', 'in', '0901210000', 1000, ['proof_of_origin' => true]); // an estimate, not a customs ruling
+
+// API 1.10: tax treaties (an array: country, partner, count, treaties); Denmark, Estonia and Poland
+$treaties = $client->taxTreaties('in', 'us');               // treaties are stored for India
+$dk = $client->netSalary('dk', 600000, ['municipality' => 'average', 'church' => false, 'atp_hours' => '0']);
+$ee = $client->netSalary('ee', 30000, ['funded_pension' => '0', 'pension_age' => false]);
+$pl = $client->employerCost('pl', 120000, ['accident_rate_pct' => 1.67, 'commuter' => false]);
+$pl->verification;                                          // 'official-example', 'law-text' or null
 ```
 
 API calls accept a country by its short code (ISO 3166-1 alpha-2 in lower case, with `uk` for the United Kingdom; `gb` also works), such as `nz`, `de` or `ae`, as well as its English name or the older key (`new-zealand`, `germany`). Responses still carry the older key in `country`. The offline `Tables` accept the same short codes, ISO codes (`NZ`) and English names (`New Zealand`), case-insensitively, next to the keys in the [coverage](#coverage) table.
@@ -186,6 +193,10 @@ API calls accept a country by its short code (ISO 3166-1 alpha-2 in lower case, 
 `region` is required for take-home pay in `us` and `ca`, and for employer cost in `us`, `au` and `ca`; without it the API answers HTTP 400 `missing_parameter` with the valid codes. The US `filing_status` values are `single`, `mfj` and `hoh` (`married` and `married_joint` are accepted for `mfj`, `head_of_household` for `hoh`).
 
 Each country's parameters for `net-salary` and `employer-cost` (for example `filing_status` in the US or `tax_class` in Germany) are listed by `countries()` and in the [OpenAPI description](https://calcbloc.com/api/openapi.json). Countries marked `tablesOnly` have tax tables but no calculation engine yet. The calculation endpoints answer them with HTTP 400 `unsupported_country`.
+
+Since API 1.10, `CalculationResult::$verification` says how a calculation is checked: `official-example` where the golden tests reproduce a worked example published by the tax authority or social security institution (Estonia, Poland), `law-text` where no official example is published and the tests are worked by hand from the law (Denmark), and `null` for the countries with their own engine. With a value, the first note says how the calculation was checked and links the official sources. `ApiCountry::verification('net-salary')` gives the same per country.
+
+`taxTreaties()` (API 1.10) lists, for each treaty, the maximum withholding rates in the source State on dividends, interest, royalties and fees for technical services (decimals, 0.15 = 15%) with their conditions, articles and wording, the relief method of each country, signature and entry-into-force dates, MLI status and the official source. Nothing is computed.
 
 ### Free use and API keys
 
@@ -253,47 +264,223 @@ Generated from `data/manifest.json` by `composer coverage-table`. "Regions" coun
 <!-- coverage:start -->
 | Country | Code | Currency | Tax years | Regions | Last checked | API endpoints |
 | --- | --- | --- | --- | --- | --- | --- |
-| [Australia](https://calcbloc.com/australia/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `australia` | AUD | 2026-27 | - | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
-| [Austria](https://calcbloc.com/austria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `austria` | EUR | 2026 | - | 2026-11-14 | tax tables |
-| [Bulgaria](https://calcbloc.com/bulgaria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bulgaria` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Canada](https://calcbloc.com/canada/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `canada` | CAD | 2026 | 13 | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
-| [Croatia](https://calcbloc.com/croatia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `croatia` | EUR | 2026 | 21 | 2026-11-11 | tax tables |
-| [Cyprus](https://calcbloc.com/cyprus/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cyprus` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Czechia](https://calcbloc.com/czechia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `czechia` | CZK | 2026 | - | 2026-11-11 | tax tables |
-| [Denmark](https://calcbloc.com/denmark/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `denmark` | DKK | 2026 | 5 | 2026-11-09 | tax tables |
-| [Estonia](https://calcbloc.com/estonia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `estonia` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Finland](https://calcbloc.com/finland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `finland` | EUR | 2026 | 19 | 2026-11-11 | tax tables |
-| [France](https://calcbloc.com/france/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `france` | EUR | 2026 | - | 2026-11-13 | tax tables, net-salary, compare |
-| [Germany](https://calcbloc.com/germany/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `germany` | EUR | 2026 | - | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
-| [Greece](https://calcbloc.com/greece/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `greece` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Hungary](https://calcbloc.com/hungary/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `hungary` | HUF | 2026 | - | 2026-11-11 | tax tables |
-| [Iceland](https://calcbloc.com/iceland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `iceland` | ISK | 2026 | - | 2026-11-11 | tax tables |
-| [India](https://calcbloc.com/india/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `india` | INR | 2026-27 | - | 2026-11-14 | tax tables, net-salary, employer-cost, compare |
-| [Ireland](https://calcbloc.com/ireland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ireland` | EUR | 2026 | - | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
-| [Italy](https://calcbloc.com/italy/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `italy` | EUR | 2026 | 21 | 2026-11-13 | tax tables |
-| [Latvia](https://calcbloc.com/latvia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `latvia` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Liechtenstein](https://calcbloc.com/liechtenstein/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `liechtenstein` | CHF | 2026 | - | 2026-11-13 | tax tables |
-| [Lithuania](https://calcbloc.com/lithuania/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `lithuania` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Luxembourg](https://calcbloc.com/luxembourg/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `luxembourg` | EUR | 2026 | - | 2026-11-14 | tax tables |
-| [Malta](https://calcbloc.com/malta/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `malta` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Netherlands](https://calcbloc.com/netherlands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `netherlands` | EUR | 2026 | - | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
-| [New Zealand](https://calcbloc.com/new-zealand/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `new-zealand` | NZD | 2026-27 | - | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
-| [Norway](https://calcbloc.com/norway/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `norway` | NOK | 2026 | - | 2026-11-11 | tax tables |
-| [Poland](https://calcbloc.com/poland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `poland` | PLN | 2026 | - | 2026-11-10 | tax tables |
-| [Portugal](https://calcbloc.com/portugal/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `portugal` | EUR | 2026 | 2 | 2026-11-14 | tax tables |
-| [Romania](https://calcbloc.com/romania/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `romania` | RON | 2026 | - | 2026-11-11 | tax tables |
-| [Serbia](https://calcbloc.com/serbia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `serbia` | RSD | 2026 | - | 2026-11-13 | tax tables |
-| [Singapore](https://calcbloc.com/singapore/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `singapore` | SGD | 2026 | - | 2026-11-14 | tax tables, net-salary, employer-cost, compare |
-| [Slovakia](https://calcbloc.com/slovakia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `slovakia` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Slovenia](https://calcbloc.com/slovenia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `slovenia` | EUR | 2026 | - | 2026-11-11 | tax tables |
-| [Spain](https://calcbloc.com/spain/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `spain` | EUR | 2026 | 21 | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
-| [Sweden](https://calcbloc.com/sweden/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `sweden` | SEK | 2026 | 21 | 2026-11-10 | tax tables |
-| [Switzerland](https://calcbloc.com/switzerland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `switzerland` | CHF | 2026 | 26 | 2026-11-14 | tax tables |
-| [Türkiye](https://calcbloc.com/turkey/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `turkey` | TRY | 2026 | - | 2026-11-13 | tax tables |
-| [Ukraine](https://calcbloc.com/ukraine/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ukraine` | UAH | 2026 | - | 2026-11-12 | tax tables |
-| [United Arab Emirates](https://calcbloc.com/uae/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uae` | AED | 2026 | - | 2026-11-14 | tax tables |
-| [United Kingdom](https://calcbloc.com/uk/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uk` | GBP | 2026-27, 2025-26 | 2 | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
-| [United States](https://calcbloc.com/us/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `us` | USD | 2026 | 51 | 2026-11-13 | tax tables, net-salary, employer-cost, compare |
+| [Albania](https://calcbloc.com/albania/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `albania` | ALL | 2026 | - | 2026-11-26 | tax tables |
+| [Algeria](https://calcbloc.com/algeria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `algeria` | DZD | 2026 | - | 2026-11-26 | tax tables |
+| [American Samoa](https://calcbloc.com/american-samoa/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `american-samoa` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Andorra](https://calcbloc.com/andorra/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `andorra` | EUR | 2026 | - | 2026-11-26 | tax tables |
+| [Angola](https://calcbloc.com/angola/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `angola` | AOA | 2026 | - | 2026-11-27 | tax tables |
+| [Anguilla](https://calcbloc.com/anguilla/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `anguilla` | XCD | 2026 | - | 2026-11-27 | tax tables |
+| [Antigua and Barbuda](https://calcbloc.com/antigua-and-barbuda/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `antigua-and-barbuda` | XCD | 2026 | - | 2026-11-26 | tax tables |
+| [Argentina](https://calcbloc.com/argentina/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `argentina` | ARS | 2026 | - | 2026-11-26 | tax tables |
+| [Armenia](https://calcbloc.com/armenia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `armenia` | AMD | 2026 | - | 2026-11-27 | tax tables |
+| [Aruba](https://calcbloc.com/aruba/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `aruba` | AWG | 2026 | - | 2026-11-27 | tax tables |
+| [Australia](https://calcbloc.com/australia/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `australia` | AUD | 2026-27 | - | 2026-11-27 | tax tables, net-salary, employer-cost, compare |
+| [Austria](https://calcbloc.com/austria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `austria` | EUR | 2026 | - | 2026-11-27 | tax tables |
+| [Azerbaijan](https://calcbloc.com/azerbaijan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `azerbaijan` | AZN | 2026 | - | 2026-11-26 | tax tables |
+| [Bahamas](https://calcbloc.com/bahamas/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bahamas` | BSD | 2026 | - | 2026-11-26 | tax tables |
+| [Bahrain](https://calcbloc.com/bahrain/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bahrain` | BHD | 2026 | - | 2026-11-22 | tax tables |
+| [Bangladesh](https://calcbloc.com/bangladesh/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bangladesh` | BDT | 2026-27 | - | 2026-11-22 | tax tables |
+| [Barbados](https://calcbloc.com/barbados/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `barbados` | BBD | 2026 | - | 2026-11-26 | tax tables |
+| [Belarus](https://calcbloc.com/belarus/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `belarus` | BYN | 2026 | - | 2026-11-26 | tax tables |
+| [Belize](https://calcbloc.com/belize/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `belize` | BZD | 2026 | - | 2026-11-26 | tax tables |
+| [Benin](https://calcbloc.com/benin/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `benin` | XOF | 2026 | - | 2026-11-26 | tax tables |
+| [Bermuda](https://calcbloc.com/bermuda/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bermuda` | BMD | 2026-27 | - | 2026-11-26 | tax tables |
+| [Bhutan](https://calcbloc.com/bhutan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bhutan` | BTN | 2026 | - | 2026-11-27 | tax tables |
+| [Bolivia](https://calcbloc.com/bolivia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bolivia` | BOB | 2026 | - | 2026-11-26 | tax tables |
+| [Bosnia and Herzegovina](https://calcbloc.com/bosnia-and-herzegovina/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bosnia-and-herzegovina` | BAM | 2026 | - | 2026-11-26 | tax tables |
+| [Botswana](https://calcbloc.com/botswana/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `botswana` | BWP | 2026-27 | - | 2026-11-26 | tax tables |
+| [Brazil](https://calcbloc.com/brazil/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `brazil` | BRL | 2026 | - | 2026-11-27 | tax tables |
+| [British Virgin Islands](https://calcbloc.com/british-virgin-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `british-virgin-islands` | USD | 2026 | - | 2026-11-26 | tax tables |
+| [Brunei](https://calcbloc.com/brunei/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `brunei` | BND | 2026 | - | 2026-11-26 | tax tables |
+| [Bulgaria](https://calcbloc.com/bulgaria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `bulgaria` | EUR | 2026 | - | 2026-11-27 | tax tables |
+| [Burkina Faso](https://calcbloc.com/burkina-faso/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `burkina-faso` | XOF | 2026 | - | 2026-11-26 | tax tables |
+| [Burundi](https://calcbloc.com/burundi/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `burundi` | BIF | 2026-27 | - | 2026-11-27 | tax tables |
+| [Cabo Verde](https://calcbloc.com/cabo-verde/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cabo-verde` | CVE | 2026 | - | 2026-11-26 | tax tables |
+| [Cambodia](https://calcbloc.com/cambodia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cambodia` | KHR | 2026 | - | 2026-11-26 | tax tables |
+| [Cameroon](https://calcbloc.com/cameroon/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cameroon` | XAF | 2026 | - | 2026-11-26 | tax tables |
+| [Canada](https://calcbloc.com/canada/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `canada` | CAD | 2026 | 13 | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Caribbean Netherlands](https://calcbloc.com/caribbean-netherlands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `caribbean-netherlands` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Cayman Islands](https://calcbloc.com/cayman-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cayman-islands` | KYD | 2026 | - | 2026-11-26 | tax tables |
+| [Central African Republic](https://calcbloc.com/central-african-republic/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `central-african-republic` | XAF | 2026 | - | 2026-11-27 | tax tables |
+| [Chad](https://calcbloc.com/chad/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `chad` | XAF | 2026 | - | 2026-11-26 | tax tables |
+| [Chile](https://calcbloc.com/chile/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `chile` | CLP | 2026 | - | 2026-11-22 | tax tables |
+| [China](https://calcbloc.com/china/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `china` | CNY | 2026 | - | 2026-11-22 | tax tables |
+| [Colombia](https://calcbloc.com/colombia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `colombia` | COP | 2026 | - | 2026-11-22 | tax tables |
+| [Comoros](https://calcbloc.com/comoros/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `comoros` | KMF | 2026 | - | 2026-11-27 | tax tables |
+| [Cook Islands](https://calcbloc.com/cook-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cook-islands` | NZD | 2026 | - | 2026-11-27 | tax tables |
+| [Costa Rica](https://calcbloc.com/costa-rica/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `costa-rica` | CRC | 2026 | - | 2026-11-22 | tax tables |
+| [Croatia](https://calcbloc.com/croatia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `croatia` | EUR | 2026 | 21 | 2026-11-22 | tax tables |
+| [Cuba](https://calcbloc.com/cuba/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cuba` | CUP | 2026 | - | 2026-11-26 | tax tables |
+| [Curaçao](https://calcbloc.com/curacao/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `curacao` | XCG | 2026 | - | 2026-11-27 | tax tables |
+| [Cyprus](https://calcbloc.com/cyprus/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cyprus` | EUR | 2026 | - | 2026-11-22 | tax tables |
+| [Czechia](https://calcbloc.com/czechia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `czechia` | CZK | 2026 | - | 2026-11-22 | tax tables |
+| [Côte d’Ivoire](https://calcbloc.com/cote-divoire/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `cote-divoire` | XOF | 2026 | - | 2026-11-26 | tax tables |
+| [DR Congo](https://calcbloc.com/dr-congo/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `dr-congo` | CDF | 2026 | - | 2026-11-26 | tax tables |
+| [Denmark](https://calcbloc.com/denmark/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `denmark` | DKK | 2026 | 5 | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Djibouti](https://calcbloc.com/djibouti/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `djibouti` | DJF | 2026 | - | 2026-11-26 | tax tables |
+| [Dominica](https://calcbloc.com/dominica/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `dominica` | XCD | 2026 | - | 2026-11-26 | tax tables |
+| [Dominican Republic](https://calcbloc.com/dominican-republic/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `dominican-republic` | DOP | 2026 | - | 2026-11-26 | tax tables |
+| [Ecuador](https://calcbloc.com/ecuador/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ecuador` | USD | 2026 | - | 2026-11-26 | tax tables |
+| [Egypt](https://calcbloc.com/egypt/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `egypt` | EGP | 2026 | - | 2026-11-26 | tax tables |
+| [El Salvador](https://calcbloc.com/el-salvador/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `el-salvador` | USD | 2026 | - | 2026-11-26 | tax tables |
+| [Estonia](https://calcbloc.com/estonia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `estonia` | EUR | 2026 | - | 2026-11-21 | tax tables, net-salary, employer-cost, compare |
+| [Eswatini](https://calcbloc.com/eswatini/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `eswatini` | SZL | 2026-27 | - | 2026-11-26 | tax tables |
+| [Ethiopia](https://calcbloc.com/ethiopia/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ethiopia` | ETB | 2026-27 | - | 2026-11-26 | tax tables |
+| [Falkland Islands](https://calcbloc.com/falkland-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `falkland-islands` | FKP | 2026 | - | 2026-11-27 | tax tables |
+| [Faroe Islands](https://calcbloc.com/faroe-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `faroe-islands` | DKK | 2026 | - | 2026-11-27 | tax tables |
+| [Fiji](https://calcbloc.com/fiji/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `fiji` | FJD | 2026 | - | 2026-11-26 | tax tables |
+| [Finland](https://calcbloc.com/finland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `finland` | EUR | 2026 | 19 | 2026-11-22 | tax tables |
+| [France](https://calcbloc.com/france/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `france` | EUR | 2026 | - | 2026-11-27 | tax tables, net-salary, compare |
+| [French Polynesia](https://calcbloc.com/french-polynesia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `french-polynesia` | XPF | 2026 | - | 2026-11-27 | tax tables |
+| [French Southern Territories](https://calcbloc.com/french-southern-territories/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `french-southern-territories` | EUR | 2026 | - | 2026-11-27 | tax tables |
+| [Gabon](https://calcbloc.com/gabon/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `gabon` | XAF | 2026 | - | 2026-11-26 | tax tables |
+| [Georgia](https://calcbloc.com/georgia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `georgia` | GEL | 2026 | - | 2026-11-26 | tax tables |
+| [Germany](https://calcbloc.com/germany/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `germany` | EUR | 2026 | - | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Ghana](https://calcbloc.com/ghana/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ghana` | GHS | 2026 | - | 2026-11-26 | tax tables |
+| [Gibraltar](https://calcbloc.com/gibraltar/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `gibraltar` | GIP | 2026-27 | - | 2026-11-27 | tax tables |
+| [Greece](https://calcbloc.com/greece/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `greece` | EUR | 2026 | - | 2026-11-22 | tax tables |
+| [Greenland](https://calcbloc.com/greenland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `greenland` | DKK | 2026 | - | 2026-11-27 | tax tables |
+| [Grenada](https://calcbloc.com/grenada/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `grenada` | XCD | 2026 | - | 2026-11-27 | tax tables |
+| [Guam](https://calcbloc.com/guam/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `guam` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Guatemala](https://calcbloc.com/guatemala/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `guatemala` | GTQ | 2026 | - | 2026-11-26 | tax tables |
+| [Guernsey](https://calcbloc.com/guernsey/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `guernsey` | GBP | 2026 | - | 2026-11-27 | tax tables |
+| [Guinea](https://calcbloc.com/guinea/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `guinea` | GNF | 2026 | - | 2026-11-27 | tax tables |
+| [Guinea-Bissau](https://calcbloc.com/guinea-bissau/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `guinea-bissau` | XOF | 2026 | - | 2026-11-27 | tax tables |
+| [Guyana](https://calcbloc.com/guyana/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `guyana` | GYD | 2026 | - | 2026-11-26 | tax tables |
+| [Haiti](https://calcbloc.com/haiti/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `haiti` | HTG | 2026-27 | - | 2026-11-26 | tax tables |
+| [Honduras](https://calcbloc.com/honduras/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `honduras` | HNL | 2026 | - | 2026-11-26 | tax tables |
+| [Hong Kong](https://calcbloc.com/hong-kong/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `hong-kong` | HKD | 2026-27 | - | 2026-11-26 | tax tables |
+| [Hungary](https://calcbloc.com/hungary/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `hungary` | HUF | 2026 | - | 2026-11-22 | tax tables |
+| [Iceland](https://calcbloc.com/iceland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `iceland` | ISK | 2026 | - | 2026-11-22 | tax tables |
+| [India](https://calcbloc.com/india/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `india` | INR | 2026-27 | - | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Indonesia](https://calcbloc.com/indonesia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `indonesia` | IDR | 2026 | - | 2026-11-22 | tax tables |
+| [Ireland](https://calcbloc.com/ireland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ireland` | EUR | 2026 | - | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Isle of Man](https://calcbloc.com/isle-of-man/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `isle-of-man` | GBP | 2026-27 | - | 2026-11-27 | tax tables |
+| [Israel](https://calcbloc.com/israel/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `israel` | ILS | 2026 | - | 2026-11-22 | tax tables |
+| [Italy](https://calcbloc.com/italy/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `italy` | EUR | 2026 | 21 | 2026-11-22 | tax tables |
+| [Jamaica](https://calcbloc.com/jamaica/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `jamaica` | JMD | 2026 | - | 2026-11-26 | tax tables |
+| [Japan](https://calcbloc.com/japan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `japan` | JPY | 2026 | - | 2026-11-27 | tax tables |
+| [Jersey](https://calcbloc.com/jersey/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `jersey` | GBP | 2026 | - | 2026-11-26 | tax tables |
+| [Jordan](https://calcbloc.com/jordan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `jordan` | JOD | 2026 | - | 2026-11-26 | tax tables |
+| [Kazakhstan](https://calcbloc.com/kazakhstan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `kazakhstan` | KZT | 2026 | - | 2026-11-26 | tax tables |
+| [Kenya](https://calcbloc.com/kenya/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `kenya` | KES | 2026 | - | 2026-11-26 | tax tables |
+| [Kiribati](https://calcbloc.com/kiribati/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `kiribati` | AUD | 2026 | - | 2026-11-26 | tax tables |
+| [Kosovo](https://calcbloc.com/kosovo/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `kosovo` | EUR | 2026 | - | 2026-11-26 | tax tables |
+| [Kuwait](https://calcbloc.com/kuwait/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `kuwait` | KWD | 2026 | - | 2026-11-22 | tax tables |
+| [Kyrgyzstan](https://calcbloc.com/kyrgyzstan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `kyrgyzstan` | KGS | 2026 | - | 2026-11-26 | tax tables |
+| [Laos](https://calcbloc.com/laos/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `laos` | LAK | 2026 | - | 2026-11-27 | tax tables |
+| [Latvia](https://calcbloc.com/latvia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `latvia` | EUR | 2026 | - | 2026-11-21 | tax tables |
+| [Lesotho](https://calcbloc.com/lesotho/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `lesotho` | LSL | 2026-27 | - | 2026-11-26 | tax tables |
+| [Liberia](https://calcbloc.com/liberia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `liberia` | LRD | 2026 | - | 2026-11-27 | tax tables |
+| [Liechtenstein](https://calcbloc.com/liechtenstein/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `liechtenstein` | CHF | 2026 | - | 2026-11-22 | tax tables |
+| [Lithuania](https://calcbloc.com/lithuania/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `lithuania` | EUR | 2026 | - | 2026-11-21 | tax tables |
+| [Luxembourg](https://calcbloc.com/luxembourg/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `luxembourg` | EUR | 2026 | - | 2026-11-27 | tax tables |
+| [Macao](https://calcbloc.com/macao/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `macao` | MOP | 2026 | - | 2026-11-26 | tax tables |
+| [Madagascar](https://calcbloc.com/madagascar/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `madagascar` | MGA | 2026 | - | 2026-11-26 | tax tables |
+| [Malawi](https://calcbloc.com/malawi/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `malawi` | MWK | 2026-27 | - | 2026-11-26 | tax tables |
+| [Malaysia](https://calcbloc.com/malaysia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `malaysia` | MYR | 2026 | - | 2026-11-22 | tax tables |
+| [Maldives](https://calcbloc.com/maldives/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `maldives` | MVR | 2026 | - | 2026-11-26 | tax tables |
+| [Mali](https://calcbloc.com/mali/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `mali` | XOF | 2026 | - | 2026-11-26 | tax tables |
+| [Malta](https://calcbloc.com/malta/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `malta` | EUR | 2026 | - | 2026-11-22 | tax tables |
+| [Marshall Islands](https://calcbloc.com/marshall-islands/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `marshall-islands` | USD | 2026-27 | - | 2026-11-26 | tax tables |
+| [Mauritania](https://calcbloc.com/mauritania/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `mauritania` | MRU | 2026 | - | 2026-11-26 | tax tables |
+| [Mauritius](https://calcbloc.com/mauritius/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `mauritius` | MUR | 2026-27 | - | 2026-11-26 | tax tables |
+| [Mexico](https://calcbloc.com/mexico/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `mexico` | MXN | 2026 | - | 2026-11-21 | tax tables |
+| [Micronesia](https://calcbloc.com/micronesia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `micronesia` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Moldova](https://calcbloc.com/moldova/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `moldova` | MDL | 2026 | - | 2026-11-26 | tax tables |
+| [Monaco](https://calcbloc.com/monaco/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `monaco` | EUR | 2026 | - | 2026-11-26 | tax tables |
+| [Montenegro](https://calcbloc.com/montenegro/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `montenegro` | EUR | 2026 | - | 2026-11-26 | tax tables |
+| [Montserrat](https://calcbloc.com/montserrat/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `montserrat` | XCD | 2026 | - | 2026-11-27 | tax tables |
+| [Morocco](https://calcbloc.com/morocco/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `morocco` | MAD | 2026 | - | 2026-11-26 | tax tables |
+| [Mozambique](https://calcbloc.com/mozambique/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `mozambique` | MZN | 2026 | - | 2026-11-27 | tax tables |
+| [Myanmar](https://calcbloc.com/myanmar/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `myanmar` | MMK | 2026-27 | - | 2026-11-26 | tax tables |
+| [Namibia](https://calcbloc.com/namibia/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `namibia` | NAD | 2026-27 | - | 2026-11-26 | tax tables |
+| [Nauru](https://calcbloc.com/nauru/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `nauru` | AUD | 2026-27 | - | 2026-11-27 | tax tables |
+| [Nepal](https://calcbloc.com/nepal/tax-tables/2083-84?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `nepal` | NPR | 2083-84 | - | 2026-11-26 | tax tables |
+| [Netherlands](https://calcbloc.com/netherlands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `netherlands` | EUR | 2026 | - | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [New Caledonia](https://calcbloc.com/new-caledonia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `new-caledonia` | XPF | 2026 | - | 2026-11-27 | tax tables |
+| [New Zealand](https://calcbloc.com/new-zealand/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `new-zealand` | NZD | 2026-27 | - | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Nicaragua](https://calcbloc.com/nicaragua/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `nicaragua` | NIO | 2026 | - | 2026-11-27 | tax tables |
+| [Niger](https://calcbloc.com/niger/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `niger` | XOF | 2026 | - | 2026-11-26 | tax tables |
+| [Nigeria](https://calcbloc.com/nigeria/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `nigeria` | NGN | 2026 | - | 2026-11-26 | tax tables |
+| [Niue](https://calcbloc.com/niue/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `niue` | NZD | 2026-27 | - | 2026-11-27 | tax tables |
+| [North Macedonia](https://calcbloc.com/north-macedonia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `north-macedonia` | MKD | 2026 | - | 2026-11-26 | tax tables |
+| [Northern Mariana Islands](https://calcbloc.com/northern-mariana-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `northern-mariana-islands` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Norway](https://calcbloc.com/norway/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `norway` | NOK | 2026 | - | 2026-11-22 | tax tables |
+| [Oman](https://calcbloc.com/oman/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `oman` | OMR | 2026 | - | 2026-11-22 | tax tables |
+| [Pakistan](https://calcbloc.com/pakistan/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `pakistan` | PKR | 2026-27 | - | 2026-11-22 | tax tables |
+| [Palau](https://calcbloc.com/palau/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `palau` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Palestine](https://calcbloc.com/palestine/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `palestine` | ILS | 2026 | - | 2026-11-27 | tax tables |
+| [Panama](https://calcbloc.com/panama/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `panama` | USD | 2026 | - | 2026-11-26 | tax tables |
+| [Papua New Guinea](https://calcbloc.com/papua-new-guinea/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `papua-new-guinea` | PGK | 2026 | - | 2026-11-26 | tax tables |
+| [Paraguay](https://calcbloc.com/paraguay/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `paraguay` | PYG | 2026 | - | 2026-11-26 | tax tables |
+| [Peru](https://calcbloc.com/peru/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `peru` | PEN | 2026 | - | 2026-11-26 | tax tables |
+| [Philippines](https://calcbloc.com/philippines/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `philippines` | PHP | 2026 | - | 2026-11-26 | tax tables |
+| [Pitcairn Islands](https://calcbloc.com/pitcairn-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `pitcairn-islands` | NZD | 2026 | - | 2026-11-27 | tax tables |
+| [Poland](https://calcbloc.com/poland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `poland` | PLN | 2026 | - | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Portugal](https://calcbloc.com/portugal/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `portugal` | EUR | 2026 | 2 | 2026-11-27 | tax tables |
+| [Puerto Rico](https://calcbloc.com/puerto-rico/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `puerto-rico` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Qatar](https://calcbloc.com/qatar/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `qatar` | QAR | 2026 | - | 2026-11-22 | tax tables |
+| [Republic of the Congo](https://calcbloc.com/congo/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `congo` | XAF | 2026 | - | 2026-11-26 | tax tables |
+| [Romania](https://calcbloc.com/romania/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `romania` | RON | 2026 | - | 2026-11-22 | tax tables |
+| [Russia](https://calcbloc.com/russia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `russia` | RUB | 2026 | - | 2026-11-26 | tax tables |
+| [Rwanda](https://calcbloc.com/rwanda/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `rwanda` | RWF | 2026 | - | 2026-11-26 | tax tables |
+| [Saint Helena](https://calcbloc.com/saint-helena/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `saint-helena` | SHP | 2026-27 | - | 2026-11-27 | tax tables |
+| [Saint Kitts and Nevis](https://calcbloc.com/saint-kitts-and-nevis/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `saint-kitts-and-nevis` | XCD | 2026 | - | 2026-11-26 | tax tables |
+| [Saint Lucia](https://calcbloc.com/saint-lucia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `saint-lucia` | XCD | 2026 | - | 2026-11-26 | tax tables |
+| [Saint Pierre and Miquelon](https://calcbloc.com/saint-pierre-and-miquelon/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `saint-pierre-and-miquelon` | EUR | 2026 | - | 2026-11-27 | tax tables |
+| [Saint Vincent and the Grenadines](https://calcbloc.com/saint-vincent-and-the-grenadines/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `saint-vincent-and-the-grenadines` | XCD | 2026 | - | 2026-11-26 | tax tables |
+| [Saint-Barthélemy](https://calcbloc.com/saint-barthelemy/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `saint-barthelemy` | EUR | 2026 | - | 2026-11-27 | tax tables |
+| [Saint-Martin](https://calcbloc.com/saint-martin/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `saint-martin` | EUR | 2026 | - | 2026-11-27 | tax tables |
+| [Samoa](https://calcbloc.com/samoa/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `samoa` | WST | 2026 | - | 2026-11-26 | tax tables |
+| [San Marino](https://calcbloc.com/san-marino/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `san-marino` | EUR | 2026 | - | 2026-11-26 | tax tables |
+| [Saudi Arabia](https://calcbloc.com/saudi-arabia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `saudi-arabia` | SAR | 2026 | - | 2026-11-22 | tax tables |
+| [Senegal](https://calcbloc.com/senegal/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `senegal` | XOF | 2026 | - | 2026-11-26 | tax tables |
+| [Serbia](https://calcbloc.com/serbia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `serbia` | RSD | 2026 | - | 2026-11-22 | tax tables |
+| [Seychelles](https://calcbloc.com/seychelles/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `seychelles` | SCR | 2026 | - | 2026-11-26 | tax tables |
+| [Sierra Leone](https://calcbloc.com/sierra-leone/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `sierra-leone` | SLE | 2026 | - | 2026-11-26 | tax tables |
+| [Singapore](https://calcbloc.com/singapore/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `singapore` | SGD | 2026 | - | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Sint Maarten](https://calcbloc.com/sint-maarten/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `sint-maarten` | XCG | 2026 | - | 2026-11-27 | tax tables |
+| [Slovakia](https://calcbloc.com/slovakia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `slovakia` | EUR | 2026 | - | 2026-11-22 | tax tables |
+| [Slovenia](https://calcbloc.com/slovenia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `slovenia` | EUR | 2026 | - | 2026-11-22 | tax tables |
+| [Solomon Islands](https://calcbloc.com/solomon-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `solomon-islands` | SBD | 2026 | - | 2026-11-26 | tax tables |
+| [Somalia](https://calcbloc.com/somalia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `somalia` | SOS | 2026 | - | 2026-11-27 | tax tables |
+| [South Africa](https://calcbloc.com/south-africa/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `south-africa` | ZAR | 2026-27 | - | 2026-11-22 | tax tables |
+| [South Korea](https://calcbloc.com/south-korea/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `south-korea` | KRW | 2026 | - | 2026-11-21 | tax tables |
+| [South Sudan](https://calcbloc.com/south-sudan/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `south-sudan` | SSP | 2026-27 | - | 2026-11-27 | tax tables |
+| [Spain](https://calcbloc.com/spain/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `spain` | EUR | 2026 | 21 | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Sri Lanka](https://calcbloc.com/sri-lanka/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `sri-lanka` | LKR | 2026-27 | - | 2026-11-26 | tax tables |
+| [Sudan](https://calcbloc.com/sudan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `sudan` | SDG | 2026 | - | 2026-11-27 | tax tables |
+| [Suriname](https://calcbloc.com/suriname/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `suriname` | SRD | 2026 | - | 2026-11-26 | tax tables |
+| [Sweden](https://calcbloc.com/sweden/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `sweden` | SEK | 2026 | 21 | 2026-11-22 | tax tables |
+| [Switzerland](https://calcbloc.com/switzerland/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `switzerland` | CHF | 2026 | 26 | 2026-11-22 | tax tables |
+| [Taiwan](https://calcbloc.com/taiwan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `taiwan` | TWD | 2026 | - | 2026-11-26 | tax tables |
+| [Tajikistan](https://calcbloc.com/tajikistan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `tajikistan` | TJS | 2026 | - | 2026-11-26 | tax tables |
+| [Tanzania](https://calcbloc.com/tanzania/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `tanzania` | TZS | 2026 | - | 2026-11-26 | tax tables |
+| [Thailand](https://calcbloc.com/thailand/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `thailand` | THB | 2026 | - | 2026-11-22 | tax tables |
+| [The Gambia](https://calcbloc.com/gambia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `gambia` | GMD | 2026 | - | 2026-11-27 | tax tables |
+| [Timor-Leste](https://calcbloc.com/timor-leste/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `timor-leste` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Togo](https://calcbloc.com/togo/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `togo` | XOF | 2026 | - | 2026-11-26 | tax tables |
+| [Tonga](https://calcbloc.com/tonga/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `tonga` | TOP | 2026-27 | - | 2026-11-26 | tax tables |
+| [Trinidad and Tobago](https://calcbloc.com/trinidad-and-tobago/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `trinidad-and-tobago` | TTD | 2026 | - | 2026-11-26 | tax tables |
+| [Tunisia](https://calcbloc.com/tunisia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `tunisia` | TND | 2026 | - | 2026-11-26 | tax tables |
+| [Turkmenistan](https://calcbloc.com/turkmenistan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `turkmenistan` | TMT | 2026 | - | 2026-11-27 | tax tables |
+| [Turks and Caicos Islands](https://calcbloc.com/turks-and-caicos-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `turks-and-caicos-islands` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Tuvalu](https://calcbloc.com/tuvalu/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `tuvalu` | AUD | 2026 | - | 2026-11-27 | tax tables |
+| [Türkiye](https://calcbloc.com/turkey/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `turkey` | TRY | 2026 | - | 2026-11-27 | tax tables |
+| [US Virgin Islands](https://calcbloc.com/us-virgin-islands/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `us-virgin-islands` | USD | 2026 | - | 2026-11-27 | tax tables |
+| [Uganda](https://calcbloc.com/uganda/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uganda` | UGX | 2026-27 | - | 2026-11-26 | tax tables |
+| [Ukraine](https://calcbloc.com/ukraine/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `ukraine` | UAH | 2026 | - | 2026-11-22 | tax tables |
+| [United Arab Emirates](https://calcbloc.com/uae/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uae` | AED | 2026 | - | 2026-11-21 | tax tables |
+| [United Kingdom](https://calcbloc.com/uk/tax-tables/2026-27?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uk` | GBP | 2026-27, 2025-26 | 2 | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [United States](https://calcbloc.com/us/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `us` | USD | 2026 | 51 | 2026-11-22 | tax tables, net-salary, employer-cost, compare |
+| [Uruguay](https://calcbloc.com/uruguay/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uruguay` | UYU | 2026 | - | 2026-11-26 | tax tables |
+| [Uzbekistan](https://calcbloc.com/uzbekistan/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `uzbekistan` | UZS | 2026 | - | 2026-11-26 | tax tables |
+| [Vanuatu](https://calcbloc.com/vanuatu/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `vanuatu` | VUV | 2026 | - | 2026-11-26 | tax tables |
+| [Vietnam](https://calcbloc.com/vietnam/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `vietnam` | VND | 2026 | - | 2026-11-22 | tax tables |
+| [Wallis and Futuna](https://calcbloc.com/wallis-and-futuna/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `wallis-and-futuna` | XPF | 2026 | - | 2026-11-27 | tax tables |
+| [Zambia](https://calcbloc.com/zambia/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `zambia` | ZMW | 2026 | - | 2026-11-26 | tax tables |
+| [Zimbabwe](https://calcbloc.com/zimbabwe/tax-tables/2026?utm_source=calcbloc-php&utm_medium=readme&utm_campaign=itmarkerz-oss) | `zimbabwe` | ZWG | 2026 | - | 2026-11-26 | tax tables |
 <!-- coverage:end -->
 
 Countries marked "bundled only" are included in the data ahead of their pages on calcbloc.com. `Client::countries()` lists what the API serves today.

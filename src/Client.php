@@ -26,7 +26,7 @@ use CalcBloc\Internal\Json;
  */
 final class Client
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.2.0';
     public const DEFAULT_BASE_URL = 'https://calcbloc.com';
     /** Environment variable read for the API key when the constructor gets none. */
     public const API_KEY_ENV = 'CALCBLOC_API_KEY';
@@ -254,6 +254,23 @@ final class Client
     public function importDuty(string $destination, string $origin, string $code, int|float $customsValue, array $params = []): array
     {
         return $this->json('import-duty', ['destination' => $destination, 'origin' => $origin, 'code' => $code, 'customs_value' => $customsValue] + $params);
+    }
+
+    // ----------------------------------------------------------------- API 1.10
+
+    /**
+     * GET /api/v1/tax-treaties (API 1.10): the double taxation treaties stored for a country (India), each with the
+     * maximum withholding rates in the source State on dividends, interest, royalties and fees for technical services
+     * (decimals) with their conditions, articles and wording, the relief method of each country, signature and
+     * entry-into-force dates, MLI status and the official source. Nothing is computed.
+     *
+     * @param string $country ISO 3166-1 alpha-2 code (`in`) or English name (`India`).
+     * @param string|null $partner Only the treaty with this country (ISO code, `uk` or an English name).
+     * @return array<string, mixed> `country`, `partner`, `count`, `treaties` and `attribution`.
+     */
+    public function taxTreaties(string $country, ?string $partner = null): array
+    {
+        return $this->json('tax-treaties', ['country' => $country, 'partner' => $partner]);
     }
 
     /**

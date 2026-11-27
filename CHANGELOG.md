@@ -4,9 +4,22 @@ All notable changes to `calcbloc/calcbloc` are documented here. The format follo
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 Changes to the tax figures themselves are listed in the [CalcBloc data changelog](https://calcbloc.com/data/changelog?utm_source=calcbloc-php&utm_medium=docs&utm_campaign=itmarkerz-oss).
 
-## [Unreleased]
+## [0.2.0] - Unreleased
 
 ### Added
+
+- For CalcBloc API 1.10: `Client::taxTreaties()` for GET /api/v1/tax-treaties, the double taxation treaties stored for
+  a country (India), with the maximum withholding rates on dividends, interest, royalties and fees for technical
+  services, their articles and wording, the relief methods, dates and the official source (an array).
+- For CalcBloc API 1.10: `CalculationResult::$verification` (`official-example`, `law-text` or null) and
+  `ApiCountry::verification($endpoint)`. With a value, the first note says how the calculation was checked.
+- For CalcBloc API 1.10: take-home pay and employer cost for Denmark (`dk`: `municipality`, `church`, `atp_hours`),
+  Estonia (`ee`: `funded_pension`, `pension_age`) and Poland (`pl`: `accident_rate_pct`, `commuter`) work through
+  `netSalary()` and `employerCost()` as they are; `compare()` accepts `dk`, `ee` and `pl`.
+- Bundled tables: 217 countries (422 tables), synced from calcbloc-data 2026-11-27; Belgium stays pending. Short
+  codes, ISO codes and names for the 84 new countries in `CountryCodes`; the README coverage table lists all 217.
+  The schema test also accepts band rates above 100% for Laos's excise on fuel-powered cars (up to 220%).
+- Tests use real API 1.10 responses as fixtures (`tests/fixtures/api-1.10/`).
 
 - For CalcBloc API 1.8 and 1.9: `Client::supplementalWithholding()`, `equityTax()`, `crossBorderEquity()`, `facts()`,
   `taxCalendar()`, `tariffs()`, `tradeAgreements()` and `importDuty()`. They return the API's JSON as an array.
